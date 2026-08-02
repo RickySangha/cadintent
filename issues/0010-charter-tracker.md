@@ -7,6 +7,7 @@ labels: [wayfinder:grilling, charter]
 Where do the map and tickets live?
 
 ## Resolution
-Local markdown tracker in this repo (issues/), same convention Ricky already runs in
-civil-platform. No migration needed when the repo is pushed; blocking via `blocked_by`
-frontmatter; frontier = open + unassigned + all blockers closed.
+Originally a local markdown tracker in-repo. Superseded 2026-08-02 by Ricky's direction:
+the tracker is **GitHub Issues** on the public repo. The map is issue #1; local ticket
+files were migrated 1:1 (local NNNN → issue #N) and then retired. Blocking is expressed
+as "Blocked by #N" lines in issue bodies; frontier = open + unassigned + all blockers closed.
