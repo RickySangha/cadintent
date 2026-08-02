@@ -1,0 +1,20 @@
+[project]
+name = "cadintent-conformance"
+version = "0.0.1"
+description = "cadintent conformance suite: schema-level and behavioral checks for implementations"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "cadintent",
+    "jsonschema>=4.21",
+]
+
+[tool.uv.sources]
+cadintent = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cadintent_conformance"]

@@ -1,3 +1,7 @@
 __pycache__/
 .venv/
 *.egg-info/
+.codegen-check/
+.pytest_cache/
+.hypothesis/
+.DS_Store

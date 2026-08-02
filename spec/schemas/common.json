@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "common.json",
+  "title": "cadintent common definitions",
+  "description": "Placeholder schema proving the schema->types pipeline. Real spec schemas are owned by later tickets and will replace this.",
+  "$defs": {
+    "Point": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" }
+      }
+    },
+    "Unit": {
+      "type": "string",
+      "enum": ["m", "mm", "ft"]
+    }
+  }
+}

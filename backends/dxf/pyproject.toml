@@ -1,0 +1,20 @@
+[project]
+name = "cadintent-dxf"
+version = "0.0.1"
+description = "cadintent DXF backend: deterministic DXF emission via ezdxf with naive placement"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+dependencies = [
+    "cadintent",
+    "ezdxf>=1.3",
+]
+
+[tool.uv.sources]
+cadintent = { workspace = true }
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/cadintent_dxf"]
