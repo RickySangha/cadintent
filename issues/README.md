@@ -1,11 +1,10 @@
-# Local issue tracker (wayfinder)
+# Tracker
 
-This folder is the tracker. One issue per file, `NNNN-slug.md`; numbers are stable ids.
+The tracker lives in [GitHub Issues](https://github.com/RickySangha/cadintent/issues).
+The wayfinder map is [issue #1](https://github.com/RickySangha/cadintent/issues/1) (pinned).
+Local ticket files were migrated 1:1 (local `NNNN` → issue `#N`) on 2026-08-02 and retired;
+their full history is in git.
 
-- Frontmatter: `status: open | closed`, `type: research | grilling | prototype | task`,
-  `labels`, `assignee` (an open unassigned ticket is unclaimed; assign yourself before working it),
-  `blocked_by: [NNNN, ...]` (native blocking convention).
-- The map is [0001-map.md](0001-map.md) (`wayfinder:map`). Open tickets are its children.
-- A ticket is on the **frontier** when open, unassigned, and every `blocked_by` issue is closed.
-- Resolve = append `## Resolution` to the ticket, set `status: closed`, add one line to the
-  map's Decisions-so-far. One ticket per session (research tickets excepted).
+Conventions: blocking = "Blocked by #N" in the body; the frontier = open + unassigned +
+all blockers closed; claim by self-assigning before work; one ticket per session
+(research tickets excepted).
