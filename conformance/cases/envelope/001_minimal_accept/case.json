@@ -1,0 +1,51 @@
+{
+  "name": "minimal_accept",
+  "spec": "0.1.0",
+  "notes": "Empty setup; one submission declaring units and creating a node. The happy-path byte baseline.",
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.create",
+            "payload": {
+              "object": "0N0DE100000000000000000000",
+              "type": "civil.manhole",
+              "geometry": {
+                "kind": "point",
+                "point": {
+                  "x": "1.000",
+                  "y": "2.000"
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}

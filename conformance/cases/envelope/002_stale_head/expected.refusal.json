@@ -1,0 +1,10 @@
+{
+  "submission": 0,
+  "errors": [
+    {
+      "code": "stale_head",
+      "command": null,
+      "path": "/head"
+    }
+  ]
+}

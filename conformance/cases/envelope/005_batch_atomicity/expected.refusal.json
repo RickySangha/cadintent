@@ -1,0 +1,10 @@
+{
+  "submission": 0,
+  "errors": [
+    {
+      "code": "id_collision",
+      "command": 1,
+      "path": "/payload/object"
+    }
+  ]
+}

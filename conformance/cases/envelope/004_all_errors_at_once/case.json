@@ -1,0 +1,66 @@
+{
+  "name": "all_errors_at_once",
+  "spec": "0.1.0",
+  "notes": "Two independent defects in one submission: a payload schema violation and an unknown reference. Both triples reported at once \u2014 total reporting, not fail-fast.",
+  "setup": [
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 1,
+      "batch": "0BATCH10000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "project.units",
+      "payload": {
+        "system": {
+          "kind": "metric"
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    }
+  ],
+  "submissions": [
+    {
+      "expect": "refuse",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 1,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "object.create",
+            "payload": {
+              "object": "0N0DE100000000000000000000",
+              "type": "civil.manhole",
+              "geometry": {
+                "kind": "point"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.set_attrs",
+            "payload": {
+              "target": "0N0DE200000000000000000000",
+              "attrs": {
+                "status": {
+                  "kind": "string",
+                  "value": "x"
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ]
+}

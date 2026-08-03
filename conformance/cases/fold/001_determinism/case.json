@@ -1,0 +1,407 @@
+{
+  "name": "determinism",
+  "spec": "0.1.0",
+  "notes": "A log exercising every core primitive (point, polyline with bulge, arc, circle, closed polyline), a tap binding, network membership, all six attr kinds, all four basis citation kinds, and a selection with a group. The runner folds twice and against the committed snapshot; all three byte-identical (laws 1, 11).",
+  "setup": [
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 1,
+      "batch": "0BATCH10000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "project.units",
+      "payload": {
+        "system": {
+          "kind": "metric"
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 2,
+      "batch": "0BATCH10000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "project.crs",
+      "payload": {
+        "crs": {
+          "id": "EPSG:26910",
+          "description": "NAD83 / UTM zone 10N"
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 3,
+      "batch": "0BATCH10000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "registry.import",
+      "payload": {
+        "registry": {
+          "id": "crown-rules",
+          "version": "1.0.0",
+          "content_hash": "sha256:abababababababababababababababababababababababababababababababab"
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 4,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0N0DE100000000000000000000",
+        "type": "civil.manhole",
+        "geometry": {
+          "kind": "point",
+          "point": {
+            "x": "0.000",
+            "y": "0.000"
+          }
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 5,
+      "batch": "0BATCH20000000000000000000",
+      "author": "extractor:dxf",
+      "kind": "object.create",
+      "payload": {
+        "object": "0N0DE200000000000000000000",
+        "type": "civil.manhole",
+        "geometry": {
+          "kind": "point",
+          "point": {
+            "x": "10.000",
+            "y": "0.000"
+          }
+        }
+      },
+      "basis": [
+        {
+          "kind": "evidence",
+          "content_hash": "sha256:abababababababababababababababababababababababababababababababab",
+          "entity": "1F3A"
+        }
+      ],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 6,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0NET1000000000000000000000",
+        "type": "civil.network"
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 7,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0EDGE100000000000000000000",
+        "type": "civil.conduit",
+        "geometry": {
+          "kind": "polyline",
+          "vertices": [
+            {
+              "point": {
+                "x": "0.000",
+                "y": "0.000"
+              }
+            },
+            {
+              "point": {
+                "x": "5.000",
+                "y": "0.000"
+              },
+              "bulge": "0.5"
+            },
+            {
+              "point": {
+                "x": "10.000",
+                "y": "0.000"
+              }
+            }
+          ],
+          "closed": false
+        },
+        "ends": {
+          "end_a": {
+            "kind": "node",
+            "node": "0N0DE100000000000000000000"
+          },
+          "end_b": {
+            "kind": "node",
+            "node": "0N0DE200000000000000000000"
+          }
+        },
+        "networks": [
+          "0NET1000000000000000000000"
+        ]
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 8,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0EDGE200000000000000000000",
+        "type": "civil.conduit",
+        "geometry": {
+          "kind": "arc",
+          "start": {
+            "x": "3.250",
+            "y": "0.000"
+          },
+          "end": {
+            "x": "10.000",
+            "y": "0.000"
+          },
+          "bulge": "0.414213562"
+        },
+        "ends": {
+          "end_a": {
+            "kind": "edge",
+            "edge": "0EDGE100000000000000000000",
+            "position": "3.250"
+          },
+          "end_b": {
+            "kind": "node",
+            "node": "0N0DE200000000000000000000"
+          }
+        },
+        "networks": [
+          "0NET1000000000000000000000"
+        ]
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 9,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0P0ND100000000000000000000",
+        "type": "civil.pond",
+        "geometry": {
+          "kind": "circle",
+          "center": {
+            "x": "20.000",
+            "y": "20.000"
+          },
+          "radius": "5.000"
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 10,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0REG10N1000000000000000000",
+        "type": "civil.easement",
+        "geometry": {
+          "kind": "polyline",
+          "vertices": [
+            {
+              "point": {
+                "x": "-1.000",
+                "y": "-1.000"
+              }
+            },
+            {
+              "point": {
+                "x": "11.000",
+                "y": "-1.000"
+              },
+              "bulge": "-0.25"
+            },
+            {
+              "point": {
+                "x": "11.000",
+                "y": "6.000"
+              }
+            },
+            {
+              "point": {
+                "x": "-1.000",
+                "y": "6.000"
+              }
+            }
+          ],
+          "closed": true
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 11,
+      "batch": "0BATCH30000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "selection.define",
+      "payload": {
+        "object": "0SXN1000000000000000000000",
+        "criteria": {
+          "kind": "explicit",
+          "objects": [
+            "0N0DE100000000000000000000",
+            "0N0DE200000000000000000000",
+            "0EDGE100000000000000000000"
+          ],
+          "groups": [
+            {
+              "name": "mains",
+              "objects": [
+                "0EDGE100000000000000000000"
+              ]
+            }
+          ]
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    }
+  ],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 11,
+        "scope": [
+          {
+            "kind": "selection",
+            "selection": "0SXN1000000000000000000000"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "object.set_attrs",
+            "payload": {
+              "target": "0SXN1000000000000000000000",
+              "attrs": {
+                "status": {
+                  "kind": "string",
+                  "value": "checked"
+                },
+                "reviewed": {
+                  "kind": "boolean",
+                  "value": true
+                },
+                "priority": {
+                  "kind": "integer",
+                  "value": 2
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.set_attrs",
+            "payload": {
+              "target": "0SXN1000000000000000000000#mains",
+              "attrs": {
+                "material": {
+                  "kind": "string",
+                  "value": "pvc"
+                },
+                "diameter": {
+                  "kind": "quantity",
+                  "value": "0.250"
+                }
+              }
+            },
+            "basis": [
+              {
+                "kind": "rule",
+                "registry": "crown-rules",
+                "version": "1.0.0",
+                "name": "crown_from_pl",
+                "params": {
+                  "cover": "1.200"
+                }
+              },
+              {
+                "kind": "command",
+                "seq": 7
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.set_attrs",
+            "payload": {
+              "target": "0N0DE100000000000000000000",
+              "attrs": {
+                "rim": {
+                  "kind": "elevation",
+                  "value": {
+                    "value": "100.10",
+                    "kind": "surveyed",
+                    "sources": [
+                      {
+                        "kind": "statement",
+                        "text": "survey shot 12"
+                      }
+                    ]
+                  }
+                },
+                "owner": {
+                  "kind": "reference",
+                  "value": "0NET1000000000000000000000"
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}

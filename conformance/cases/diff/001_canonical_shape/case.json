@@ -1,0 +1,170 @@
+{
+  "name": "canonical_shape",
+  "spec": "0.1.0",
+  "notes": "Two snapshots differing by a created object, a value change, a provenance-only rewrite, and a removal; the expected diff exercises all buckets, both tags, and canonical ordering, and diff(S, S) must byte-equal the canonical empty document (laws 7, 9). Requires the diff capability (build issue #33): could-not-run until it lands; expected.diff.json is authored when #33 pins the diff bytes.",
+  "requires": [
+    "diff"
+  ],
+  "setup": [
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 1,
+      "batch": "0BATCH10000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "project.units",
+      "payload": {
+        "system": {
+          "kind": "metric"
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 2,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0A100000000000000000000000",
+        "type": "civil.manhole",
+        "geometry": {
+          "kind": "point",
+          "point": {
+            "x": "0.000",
+            "y": "0.000"
+          }
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 3,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0B100000000000000000000000",
+        "type": "civil.manhole",
+        "geometry": {
+          "kind": "point",
+          "point": {
+            "x": "1.000",
+            "y": "1.000"
+          }
+        },
+        "attrs": {
+          "status": {
+            "kind": "string",
+            "value": "existing"
+          }
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    },
+    {
+      "project": "0PRJ0000000000000000000000",
+      "seq": 4,
+      "batch": "0BATCH20000000000000000000",
+      "author": "engineer:ricky",
+      "kind": "object.create",
+      "payload": {
+        "object": "0D100000000000000000000000",
+        "type": "civil.manhole",
+        "geometry": {
+          "kind": "point",
+          "point": {
+            "x": "2.000",
+            "y": "2.000"
+          }
+        }
+      },
+      "basis": [],
+      "created_at": "2026-08-02T00:00:00Z",
+      "spec": "0.1.0"
+    }
+  ],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 4,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "object.create",
+            "payload": {
+              "object": "0C100000000000000000000000",
+              "type": "civil.manhole",
+              "geometry": {
+                "kind": "point",
+                "point": {
+                  "x": "3.000",
+                  "y": "3.000"
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.set_attrs",
+            "payload": {
+              "target": "0A100000000000000000000000",
+              "geometry": {
+                "kind": "point",
+                "point": {
+                  "x": "0.500",
+                  "y": "0.000"
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.set_attrs",
+            "payload": {
+              "target": "0B100000000000000000000000",
+              "attrs": {
+                "status": {
+                  "kind": "string",
+                  "value": "existing"
+                }
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "object.remove",
+            "payload": {
+              "target": "0D100000000000000000000000"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "diff": {
+    "base_head": 4
+  }
+}

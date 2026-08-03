@@ -1,0 +1,10 @@
+{
+  "submission": 0,
+  "errors": [
+    {
+      "code": "author_role_violation",
+      "command": 0,
+      "path": "/author"
+    }
+  ]
+}

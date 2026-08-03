@@ -1,0 +1,13 @@
+{
+  "submission": 0,
+  "errors": [
+    {
+      "code": "dangling_reference",
+      "command": 0,
+      "path": "/payload/target",
+      "objects": [
+        "0EDGE100000000000000000000"
+      ]
+    }
+  ]
+}

@@ -56,6 +56,12 @@ class RefusalError(BaseModel):
         str,
         Field(description='Human-readable detail. Outside the conformance contract.'),
     ]
+    objects: Annotated[
+        list[common.Ulid] | None,
+        Field(
+            description='The design-object ULIDs this error names, when the code names objects: for dangling_reference the objects still referring to the removal target (inside the conformance contract, compared as a set); for scope_violation the out-of-scope object. Omitted for codes that name no objects.'
+        ),
+    ] = None
 
 
 class Refusal(BaseModel):

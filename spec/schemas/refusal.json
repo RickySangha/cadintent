@@ -43,6 +43,12 @@
         "message": {
           "type": "string",
           "description": "Human-readable detail. Outside the conformance contract."
+        },
+        "objects": {
+          "type": "array",
+          "description": "The design-object ULIDs this error names, when the code names objects: for dangling_reference the objects still referring to the removal target (inside the conformance contract, compared as a set); for scope_violation the out-of-scope object. Omitted for codes that name no objects.",
+          "items": { "$ref": "common.json#/$defs/Ulid" },
+          "uniqueItems": true
         }
       }
     },

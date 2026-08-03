@@ -1,0 +1,15 @@
+{
+  "submission": 0,
+  "errors": [
+    {
+      "code": "schema_violation",
+      "command": 0,
+      "path": "/payload/geometry"
+    },
+    {
+      "code": "unknown_reference",
+      "command": 1,
+      "path": "/payload/target"
+    }
+  ]
+}
