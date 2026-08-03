@@ -81,3 +81,40 @@ head is refused in full. There is no blind append.
 ## Fold
 
 The deterministic replay of a command log into the current model state.
+
+## Core geometry
+
+The primitives every conforming implementation must support: point, polyline
+(open or closed, with straight or circular-arc segments), arc, and circle —
+all in flat (x, y) plan coordinates. A closed polyline doubles as a region.
+Ellipses and splines are not core; they enter as tessellated arc-polylines
+with the original recorded as evidence.
+
+## Elevation
+
+A typed quantity attached to an object — never a third coordinate on a point.
+Every elevation carries its kind (surveyed or interpolated) and its sources;
+the two kinds are never interchangeable. The model is 2.5D: flat plan
+geometry plus elevations as named facts.
+
+## Unit system
+
+A project-level declaration — metric, or imperial with an explicit choice of
+foot (international by default; US survey foot only by opt-in). Stored values
+are always SI (metres); the unit system governs which quanta apply and how
+values are formatted at every boundary. No payload number carries a unit
+field.
+
+## Quantum
+
+The grid step a quantity snaps to on entry — e.g. elevations to 0.01 m,
+architectural dimensions to 1/16 inch — declared per quantity in the spec,
+native to the project's unit system, applied with ROUND_HALF_UP. Values are
+stored as quantized decimal strings, so equality in diff and conformance is
+exact, never fuzzy.
+
+## CRS declaration
+
+An optional recorded fact naming the real-world coordinate reference system a
+project's local plane corresponds to (e.g. a UTM zone or state plane zone).
+Metadata only — the kernel never transforms coordinates.
