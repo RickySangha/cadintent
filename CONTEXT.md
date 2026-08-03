@@ -301,6 +301,16 @@ renders differently or not at all. For a listed feature, verification
 degrades to property-level checks explicitly; an undocumented divergence is
 a conformance failure.
 
+## Project declaration
+
+A `project.*` command establishing a project-level fact in the log — the
+unit system, the CRS, a registry or presentation-pack import. Never an
+out-of-band parameter: the log is the only authority. Engineer-authored,
+whole-project scope. The unit system must land before any design content
+and is immutable thereafter (`missing_declaration` / `immutable_declaration`
+refusals); the CRS is metadata and latest-wins; imports are additive and
+pin exact versions.
+
 ## CRS declaration
 
 An optional recorded fact naming the real-world coordinate reference system a
