@@ -80,7 +80,26 @@ head is refused in full. There is no blind append.
 
 ## Fold
 
-The deterministic replay of a command log into the current model state.
+The deterministic replay of a command log into the current model state. Total:
+it yields a complete model or a typed error naming the entry it stopped at —
+never a partial result. Replay is byte-identical across machines and across
+conforming implementations; that byte-identity is conformance's oracle. Fold
+may resume from a snapshot, and the result must equal full replay exactly.
+
+## Snapshot
+
+The materialized model state at a given log entry, as one canonical document:
+every object's facts, the log entry that wrote each fact, and the identity
+(content hash) of the log it was folded from. A cache of the fold, never an
+authority — a snapshot that doesn't match its log refuses rather than serves.
+
+## Diff
+
+The canonical comparison of two snapshots: per object, created, modified, or
+removed, with field-level before/after detail in a fixed order. Each change is
+tagged by whether the value changed or only its provenance did (a fact
+rewritten to the same value). Exact — a diff never applies a tolerance; judging
+"close enough" is a check's job, and the check names the tolerance it used.
 
 ## Core geometry
 
