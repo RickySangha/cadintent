@@ -1,0 +1,449 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "presentation.json",
+  "title": "cadintent presentation packs",
+  "description": "Presentation packs: text styles, label rules, and the symbol catalog together in one versioned, content-hashed data artifact — the exact rule-registry machinery (registry.json), no second mechanism. A project brings a pack into scope with a presentation.import declaration pinning {id, version, content_hash}. Resolution is nearest-first per named entry (style name, label-rule id, symbol name): the nearest imported pack's entry replaces the farther one entirely (whole-entry replacement, no field-level deep merge), and a nearer entry may be {disabled: true} to suppress a farther one; every resolved entry is attributable to exactly one pack version. The ordered lists (symbol mappings, linework, tag fills) are resolved wholesale: the nearest pack declaring a non-empty list provides it entirely. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "EntryName": {
+      "type": "string",
+      "description": "The name of a text style or symbol: lowercase snake_case, optionally dotted.",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)*$"
+    },
+    "LayerName": {
+      "type": "string",
+      "description": "A DXF-safe layer name, taken verbatim by backends. Backends invent no naming scheme; an entity whose resolved entry names no layer lands on the reserved fallback layer CADINTENT-UNSTYLED with a render finding.",
+      "minLength": 1,
+      "pattern": "^[^<>/\\\\\":;?*|=`,]+$"
+    },
+    "TagName": {
+      "type": "string",
+      "description": "An attributed-block tag name (DXF ATTRIB tag conventions: uppercase, no spaces).",
+      "pattern": "^[A-Z][A-Z0-9_]*$"
+    },
+    "Justification": {
+      "type": "string",
+      "description": "The closed 9-value text justification enum.",
+      "enum": [
+        "top_left", "top_center", "top_right",
+        "middle_left", "middle_center", "middle_right",
+        "bottom_left", "bottom_center", "bottom_right"
+      ]
+    },
+    "DisplayUnit": {
+      "type": "string",
+      "description": "The closed set of display units a format object may name. Must belong to the project's unit system; '1' is the dimensionless unit for ratios and percentages. Stored values are always SI metres (or dimensionless); conversion happens only at formatting.",
+      "enum": ["m", "mm", "ft", "in", "1"]
+    },
+    "FormatStyle": {
+      "type": "string",
+      "description": "The closed presentation-style enum the spec keys off. No locale, no free-form pattern strings.",
+      "enum": ["plain", "percent", "ratio", "feet_inches"]
+    },
+    "Format": {
+      "type": "object",
+      "description": "A field's mandatory format object — formatting is part of the contract. 'quantum' is the display quantum (may be coarser than storage, never finer); rounding is fixed ROUND_HALF_UP (not a choice): decimal quantization is the only rendering path.",
+      "additionalProperties": false,
+      "required": ["unit", "quantum", "rounding", "style"],
+      "properties": {
+        "unit": { "$ref": "#/$defs/DisplayUnit" },
+        "quantum": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "rounding": { "const": "ROUND_HALF_UP" },
+        "style": { "$ref": "#/$defs/FormatStyle" }
+      }
+    },
+    "FieldSource": {
+      "type": "string",
+      "description": "What a field segment or derived tag value reads: a stored fact path ('attrs.<name>' — typed attrs unwrap to their scalar value), or a named derived view ('derived.length', 'derived.slope' — derived, never stored, per the civil pack).",
+      "pattern": "^(attrs\\.[a-z][a-z0-9_]*|derived\\.(length|slope))$"
+    },
+    "LiteralSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segment", "text"],
+      "properties": {
+        "segment": { "const": "literal" },
+        "text": { "type": "string" }
+      }
+    },
+    "FieldSegment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segment", "source", "format"],
+      "properties": {
+        "segment": { "const": "field" },
+        "source": { "$ref": "#/$defs/FieldSource" },
+        "format": { "$ref": "#/$defs/Format" }
+      }
+    },
+    "Segment": {
+      "description": "One label-content segment. A declarative segment list, not a template mini-language: no parser, no escaping story, byte-exactly renderable.",
+      "oneOf": [
+        { "$ref": "#/$defs/LiteralSegment" },
+        { "$ref": "#/$defs/FieldSegment" }
+      ],
+      "discriminator": { "propertyName": "segment" }
+    },
+    "PredicateClause": {
+      "type": "object",
+      "description": "One conjunct of a structural predicate: a fact path tested with a closed operator set. 'exists'/'absent' take no value; 'eq' takes one scalar; 'in' takes an array of scalars.",
+      "additionalProperties": false,
+      "required": ["field", "op"],
+      "properties": {
+        "field": {
+          "type": "string",
+          "pattern": "^(type|geometry|ends|networks|attrs\\.[a-z][a-z0-9_]*)$"
+        },
+        "op": { "type": "string", "enum": ["exists", "absent", "eq", "in"] },
+        "value": {
+          "description": "The comparison value: a scalar for 'eq', an array of scalars for 'in'."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "op": { "enum": ["exists", "absent"] } } },
+          "then": { "not": { "required": ["value"] } }
+        },
+        {
+          "if": { "properties": { "op": { "const": "eq" } } },
+          "then": {
+            "required": ["value"],
+            "properties": { "value": { "type": ["string", "number", "boolean"] } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "in" } } },
+          "then": {
+            "required": ["value"],
+            "properties": {
+              "value": {
+                "type": "array",
+                "items": { "type": ["string", "number", "boolean"] },
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Predicate": {
+      "type": "object",
+      "description": "A simple conjunctive structural predicate — deliberately not a first-class selection: selections are log objects carrying project ULIDs, while packs must be portable across projects. 'kind' matches the object's type fact; 'system' matches the declared system of any network the object belongs to; 'where' clauses are conjoined.",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string", "minLength": 1 },
+        "system": { "type": "string", "minLength": 1 },
+        "where": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PredicateClause" }
+        }
+      }
+    },
+    "Anchor": {
+      "type": "string",
+      "description": "The naive v0 placement anchors (charter: no pins/leaders/collision solving).",
+      "enum": ["node_location", "edge_midpoint", "edge_end_a", "edge_end_b"]
+    },
+    "Placement": {
+      "type": "object",
+      "description": "Naive placement: an anchor plus a fixed paper-millimetre offset.",
+      "additionalProperties": false,
+      "required": ["anchor", "offset"],
+      "properties": {
+        "anchor": { "$ref": "#/$defs/Anchor" },
+        "offset": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["dx", "dy"],
+          "properties": {
+            "dx": { "$ref": "common.json#/$defs/DecimalString" },
+            "dy": { "$ref": "common.json#/$defs/DecimalString" }
+          }
+        }
+      }
+    },
+    "TextStyle": {
+      "type": "object",
+      "description": "One named text style. 'height' is a quantized decimal in paper millimetres — display-scale semantics are explicit: model height = paper height x drawing scale, computed at render, never stored. Nothing renderer-specific; backends map names to their native concepts and document what they cannot honour.",
+      "additionalProperties": false,
+      "required": ["name", "layer", "font", "height", "width_factor", "justification", "rotation"],
+      "properties": {
+        "name": { "$ref": "#/$defs/EntryName" },
+        "layer": { "$ref": "#/$defs/LayerName" },
+        "font": { "type": "string", "minLength": 1 },
+        "height": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "width_factor": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "justification": { "$ref": "#/$defs/Justification" },
+        "rotation": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "DisabledTextStyle": {
+      "type": "object",
+      "description": "A nearer pack suppressing a farther pack's entry of the same name.",
+      "additionalProperties": false,
+      "required": ["name", "disabled"],
+      "properties": {
+        "name": { "$ref": "#/$defs/EntryName" },
+        "disabled": { "const": true }
+      }
+    },
+    "TextStyleEntry": {
+      "oneOf": [
+        { "$ref": "#/$defs/TextStyle" },
+        { "$ref": "#/$defs/DisabledTextStyle" }
+      ]
+    },
+    "LabelRule": {
+      "type": "object",
+      "description": "One label rule: a structural selector, an optional applicability condition of the same shape (the condition says whether the rule applies at all — an exemplar shows how, not whether), ordered content segments, the named text style the label renders in, and naive placement.",
+      "additionalProperties": false,
+      "required": ["id", "selector", "content", "text_style", "placement"],
+      "properties": {
+        "id": { "$ref": "common.json#/$defs/RuleName" },
+        "selector": { "$ref": "#/$defs/Predicate" },
+        "applicability": { "$ref": "#/$defs/Predicate" },
+        "content": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Segment" },
+          "minItems": 1
+        },
+        "text_style": { "$ref": "#/$defs/EntryName" },
+        "placement": { "$ref": "#/$defs/Placement" }
+      }
+    },
+    "DisabledLabelRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "disabled"],
+      "properties": {
+        "id": { "$ref": "common.json#/$defs/RuleName" },
+        "disabled": { "const": true }
+      }
+    },
+    "LabelRuleEntry": {
+      "oneOf": [
+        { "$ref": "#/$defs/LabelRule" },
+        { "$ref": "#/$defs/DisabledLabelRule" }
+      ]
+    },
+    "SizeMode": {
+      "type": "string",
+      "description": "'paper' symbols keep their plotted size across drawing scales (size is paper millimetres, scaled by the drawing scale at render); 'model' symbols are true-to-model size (size is SI metres).",
+      "enum": ["paper", "model"]
+    },
+    "Symbol": {
+      "type": "object",
+      "description": "One symbol catalog entry: its attribute tag names and its size semantics. Block geometry comes from an optional presentation-only template DXF; a symbol with no definition there gets a deterministic generated placeholder plus a render finding.",
+      "additionalProperties": false,
+      "required": ["name", "tags", "size_mode", "size"],
+      "properties": {
+        "name": { "$ref": "#/$defs/EntryName" },
+        "tags": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TagName" },
+          "uniqueItems": true
+        },
+        "size_mode": { "$ref": "#/$defs/SizeMode" },
+        "size": { "$ref": "common.json#/$defs/PositiveDecimalString" }
+      }
+    },
+    "DisabledSymbol": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "disabled"],
+      "properties": {
+        "name": { "$ref": "#/$defs/EntryName" },
+        "disabled": { "const": true }
+      }
+    },
+    "SymbolEntry": {
+      "oneOf": [
+        { "$ref": "#/$defs/Symbol" },
+        { "$ref": "#/$defs/DisabledSymbol" }
+      ]
+    },
+    "FixedRotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "angle"],
+      "properties": {
+        "source": { "const": "fixed" },
+        "angle": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "FlowOutRotation": {
+      "type": "object",
+      "description": "Resolve from the conduit at the node whose declared flow leaves it; end-tangent bearing, ties broken deterministically by lowest conduit ULID. If nothing resolves the renderer uses the mandatory fallback angle and emits a finding — visible degradation, never a silent 0.",
+      "additionalProperties": false,
+      "required": ["source", "fallback_angle"],
+      "properties": {
+        "source": { "const": "from_flow_out" },
+        "fallback_angle": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "FlowInRotation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "fallback_angle"],
+      "properties": {
+        "source": { "const": "from_flow_in" },
+        "fallback_angle": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "EdgeTangentRotation": {
+      "type": "object",
+      "description": "Resolve from the tangent of any conduit bound at the node (lowest conduit ULID); fallback + finding when none binds.",
+      "additionalProperties": false,
+      "required": ["source", "fallback_angle"],
+      "properties": {
+        "source": { "const": "from_edge_tangent" },
+        "fallback_angle": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "Rotation": {
+      "description": "The closed rotation-source enum. Angles are decimal degrees counter-clockwise from +X.",
+      "oneOf": [
+        { "$ref": "#/$defs/FixedRotation" },
+        { "$ref": "#/$defs/FlowOutRotation" },
+        { "$ref": "#/$defs/FlowInRotation" },
+        { "$ref": "#/$defs/EdgeTangentRotation" }
+      ],
+      "discriminator": { "propertyName": "source" }
+    },
+    "SymbolMapping": {
+      "type": "object",
+      "description": "One entry of the ordered first-match node-to-symbol mapping: first match wins, order is the author's explicit priority, no specificity scoring.",
+      "additionalProperties": false,
+      "required": ["when", "symbol", "rotation"],
+      "properties": {
+        "when": { "$ref": "#/$defs/Predicate" },
+        "symbol": { "$ref": "#/$defs/EntryName" },
+        "rotation": { "$ref": "#/$defs/Rotation" },
+        "layer": { "$ref": "#/$defs/LayerName" }
+      }
+    },
+    "Linework": {
+      "type": "object",
+      "description": "One entry of the ordered first-match edge-to-linework mapping: the layer an edge's polyline lands on. 'orient_geometry_to_flow' makes emitted vertex order follow the declared flow — declared flow only, never invert-derived.",
+      "additionalProperties": false,
+      "required": ["when", "layer"],
+      "properties": {
+        "when": { "$ref": "#/$defs/Predicate" },
+        "layer": { "$ref": "#/$defs/LayerName" },
+        "orient_geometry_to_flow": { "type": "boolean" }
+      }
+    },
+    "DerivedTagValue": {
+      "type": "object",
+      "description": "A tag value re-derivable from the model: a checker re-derives it freshly from the saved artifact against source + format and compares bytes.",
+      "additionalProperties": false,
+      "required": ["kind", "source", "format"],
+      "properties": {
+        "kind": { "const": "derived" },
+        "source": { "$ref": "#/$defs/FieldSource" },
+        "format": { "$ref": "#/$defs/Format" }
+      }
+    },
+    "LiteralTagValue": {
+      "type": "object",
+      "description": "A literal tag value: reported present-but-unverifiable by verification — visible vacuity, never a fake pass.",
+      "additionalProperties": false,
+      "required": ["kind", "text"],
+      "properties": {
+        "kind": { "const": "literal" },
+        "text": { "type": "string" }
+      }
+    },
+    "TagValue": {
+      "description": "The discriminated derived-vs-literal tag value; the distinction is load-bearing for verification.",
+      "oneOf": [
+        { "$ref": "#/$defs/DerivedTagValue" },
+        { "$ref": "#/$defs/LiteralTagValue" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "TagFill": {
+      "type": "object",
+      "description": "One tag-fill entry: for subjects matching 'when', fill attribute 'tag' with 'value'. First matching entry per tag wins.",
+      "additionalProperties": false,
+      "required": ["when", "tag", "value"],
+      "properties": {
+        "when": { "$ref": "#/$defs/Predicate" },
+        "tag": { "$ref": "#/$defs/TagName" },
+        "value": { "$ref": "#/$defs/TagValue" }
+      }
+    },
+    "PackArtifact": {
+      "type": "object",
+      "description": "One released presentation-pack version. Immutable: any change is a new version; the content hash is sha256 over the artifact's canonical bytes (the same canonical serialization as snapshots).",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "text_styles": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TextStyleEntry" }
+        },
+        "label_rules": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/LabelRuleEntry" }
+        },
+        "symbols": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SymbolEntry" }
+        },
+        "symbol_mappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SymbolMapping" }
+        },
+        "linework": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Linework" }
+        },
+        "tag_fills": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/TagFill" }
+        }
+      }
+    },
+    "RenderReport": {
+      "type": "object",
+      "description": "The per-render report artifact written beside the DXF (<out>.render.json, canonical bytes): renderer findings in the shared finding schema, citing the log head, spec stamp, presentation pack versions, and drawing scale rendered from. Render findings judge one output artifact of one render invocation — a separate channel from pack-check results, same finding vocabulary. Findings that concern no single design object cite the project ULID as their subject.",
+      "additionalProperties": false,
+      "required": ["spec", "project", "head", "log_hash", "scale", "packs", "findings"],
+      "properties": {
+        "spec": { "$ref": "common.json#/$defs/SpecVersion" },
+        "project": {
+          "type": ["string", "null"],
+          "description": "The project ULID, or null when the model is empty."
+        },
+        "head": { "type": "integer", "minimum": 0 },
+        "log_hash": { "$ref": "common.json#/$defs/Sha256Hash" },
+        "scale": {
+          "$ref": "common.json#/$defs/PositiveDecimalString",
+          "description": "The drawing scale denominator (e.g. '500' for 1:500) — a render invocation parameter, recorded here."
+        },
+        "packs": {
+          "type": "array",
+          "description": "The resolved presentation packs, nearest first, each with its content hash.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "version", "content_hash"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "version": { "type": "string", "minLength": 1 },
+              "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" }
+            }
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "finding.json#/$defs/Finding" }
+        }
+      }
+    }
+  }
+}

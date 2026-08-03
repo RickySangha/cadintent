@@ -337,14 +337,32 @@ def test_check_snapshot_without_spec_stamp_is_3(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# render stub
+# render usage surface (the full render contract is tested in
+# backends/dxf/tests; here only the kernel-side usage exits)
 
 
-def test_render_stub_is_64_never_a_fake_pass(snap_file):
+def test_render_missing_output_is_64(snap_file):
     proc = run_cli("render", str(snap_file), "--scale", "500")
     assert proc.returncode == 64
     assert proc.stdout == b""
-    assert b"not yet implemented" in proc.stderr
+
+
+def test_render_bad_scale_is_64(snap_file, tmp_path):
+    proc = run_cli(
+        "render", str(snap_file), "--scale", "zero",
+        "-o", str(tmp_path / "out.dxf"),
+    )
+    assert proc.returncode == 64
+    assert b"--scale" in proc.stderr
+
+
+def test_render_without_presentation_import_is_3(snap_file, tmp_path):
+    proc = run_cli(
+        "render", str(snap_file), "--scale", "500",
+        "-o", str(tmp_path / "out.dxf"),
+    )
+    assert proc.returncode == 3
+    assert stdout_doc(proc)["error"]["code"] == "missing_declaration"
 
 
 # ---------------------------------------------------------------------------

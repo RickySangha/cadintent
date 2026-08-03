@@ -1,0 +1,16 @@
+{
+  "schema": "presentation.json",
+  "ref": "#/$defs/PackArtifact",
+  "valid": false,
+  "document": {
+    "id": "sample",
+    "version": "0.1.0",
+    "symbol_mappings": [
+      {
+        "when": { "kind": "civil.manhole" },
+        "symbol": "manhole",
+        "rotation": { "source": "from_flow_out" }
+      }
+    ]
+  }
+}

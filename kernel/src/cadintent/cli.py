@@ -369,14 +369,76 @@ def check(
     raise typer.Exit(EXIT_FINDINGS)
 
 
-@app.command(
-    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
-)
-def render(ctx: typer.Context) -> None:
-    """Render a snapshot to DXF — not yet implemented (deferred build issue)."""
-    raise click_exc.UsageError(
-        "render is not yet implemented (deferred to the DXF backend build issue)"
-    )
+@app.command()
+def render(
+    snapshot: str = typer.Argument(..., help="Snapshot file, or '-' for stdin."),
+    scale: str = typer.Option(
+        ...,
+        "--scale",
+        help="Drawing scale denominator (e.g. 500 for 1:500); recorded in the report.",
+    ),
+    pack: Optional[list[str]] = typer.Option(
+        None,
+        "--pack",
+        help="Presentation-pack artifact JSON to load (repeatable; hash-checked).",
+    ),
+    template: Optional[str] = typer.Option(
+        None,
+        "--template",
+        help="Optional presentation-only template DXF supplying block definitions.",
+    ),
+    output: str = typer.Option(..., "--output", "-o", help="Output DXF path."),
+    quiet: bool = typer.Option(False, "--quiet", "-q", help=_QUIET_HELP),
+) -> None:
+    """Render a snapshot to R2010 DXF + the render report beside it.
+
+    The report (``<out>.render.json``, canonical bytes) carries renderer
+    findings in the shared finding schema, citing the log head, spec stamp,
+    pack versions, and scale; stdout carries the report path. A non-empty
+    report exits 1 — visible degradation, never silence.
+    """
+    from decimal import Decimal, InvalidOperation
+
+    try:
+        scale_decimal = Decimal(scale)
+        if scale_decimal <= 0:
+            raise InvalidOperation
+    except InvalidOperation:
+        raise click_exc.UsageError(
+            f"--scale must be a positive decimal scale denominator, got {scale!r}"
+        )
+    try:
+        from cadintent_dxf.render import render as dxf_render
+    except ImportError:
+        raise click_exc.UsageError(
+            "the DXF backend (cadintent-dxf) is not installed in this environment"
+        )
+    from .presentation import PackStore, PresentationError
+
+    if template is not None and not os.path.isfile(template):
+        raise click_exc.UsageError(f"cannot read template DXF {template!r}")
+    stdin = _single_dash(snapshot, *(pack or []))
+    with _typed_failures(quiet, None):
+        try:
+            _, doc = _load_snapshot(snapshot, "snapshot", stdin)
+            store = PackStore()
+            for path in pack or []:
+                store.add(_read_json(path, "presentation pack", stdin))
+            resolved = store.resolve(model_from_doc(doc))
+            report = dxf_render(doc, resolved, scale_decimal, output, template)
+        except PresentationError as exc:
+            raise _CouldNotRun(exc.code, exc.message)
+    report_path = f"{output}.render.json"
+    _atomic_write(report_path, canonical.canonical_bytes(report))
+    sys.stdout.write(report_path + "\n")
+    sys.stdout.flush()
+    findings = report["findings"]
+    if findings:
+        for finding in findings:
+            subjects = ",".join(finding["subjects"]) or "-"
+            _say(quiet, f"{finding['check']}  {subjects} — {finding['message']}")
+        _say(quiet, f"{len(findings)} render finding{'' if len(findings) == 1 else 's'}")
+        raise typer.Exit(EXIT_FINDINGS)
 
 
 # ---------------------------------------------------------------------------

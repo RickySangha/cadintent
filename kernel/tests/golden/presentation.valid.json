@@ -1,0 +1,102 @@
+{
+  "schema": "presentation.json",
+  "ref": "#/$defs/PackArtifact",
+  "valid": true,
+  "document": {
+    "id": "sample",
+    "version": "0.1.0",
+    "text_styles": [
+      {
+        "name": "note",
+        "layer": "V-ANNO",
+        "font": "isocp.shx",
+        "height": "2.5",
+        "width_factor": "1",
+        "justification": "middle_left",
+        "rotation": "0"
+      },
+      { "name": "obsolete", "disabled": true }
+    ],
+    "label_rules": [
+      {
+        "id": "civil.conduit_label",
+        "selector": {
+          "kind": "civil.conduit",
+          "system": "storm",
+          "where": [{ "field": "attrs.material", "op": "eq", "value": "pvc" }]
+        },
+        "applicability": {
+          "kind": "civil.conduit",
+          "where": [{ "field": "attrs.diameter", "op": "exists" }]
+        },
+        "content": [
+          {
+            "segment": "field",
+            "source": "attrs.diameter",
+            "format": {
+              "unit": "mm",
+              "quantum": "1",
+              "rounding": "ROUND_HALF_UP",
+              "style": "plain"
+            }
+          },
+          { "segment": "literal", "text": " S=" },
+          {
+            "segment": "field",
+            "source": "derived.slope",
+            "format": {
+              "unit": "1",
+              "quantum": "0.01",
+              "rounding": "ROUND_HALF_UP",
+              "style": "percent"
+            }
+          }
+        ],
+        "text_style": "note",
+        "placement": {
+          "anchor": "edge_midpoint",
+          "offset": { "dx": "2", "dy": "-2" }
+        }
+      }
+    ],
+    "symbols": [
+      { "name": "manhole", "tags": ["NAME", "RIM"], "size_mode": "paper", "size": "3" }
+    ],
+    "symbol_mappings": [
+      {
+        "when": { "kind": "civil.manhole" },
+        "symbol": "manhole",
+        "rotation": { "source": "from_flow_out", "fallback_angle": "0" },
+        "layer": "V-NODE"
+      }
+    ],
+    "linework": [
+      {
+        "when": { "kind": "civil.conduit" },
+        "layer": "V-PIPE",
+        "orient_geometry_to_flow": true
+      }
+    ],
+    "tag_fills": [
+      {
+        "when": { "kind": "civil.manhole" },
+        "tag": "RIM",
+        "value": {
+          "kind": "derived",
+          "source": "attrs.rim_elevation",
+          "format": {
+            "unit": "m",
+            "quantum": "0.01",
+            "rounding": "ROUND_HALF_UP",
+            "style": "plain"
+          }
+        }
+      },
+      {
+        "when": { "kind": "civil.manhole" },
+        "tag": "NAME",
+        "value": { "kind": "literal", "text": "MH" }
+      }
+    ]
+  }
+}
