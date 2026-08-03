@@ -1,0 +1,19 @@
+{
+  "schema": "submission.json",
+  "ref": "#/$defs/Submission",
+  "valid": false,
+  "comment": "Missing the mandatory scope declaration.",
+  "document": {
+    "project": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "head": 0,
+    "commands": [
+      {
+        "author": "engineer:ricky",
+        "kind": "project.units",
+        "payload": { "system": { "kind": "metric" } },
+        "basis": [],
+        "spec": "0.1.0"
+      }
+    ]
+  }
+}

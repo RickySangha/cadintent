@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "scope.json",
+  "title": "cadintent scope declaration",
+  "description": "The blast radius a submission claims before it lands: a mandatory, non-empty list of typed terms with union semantics, resolved against the submission's declared head. Whole-project scope is always a deliberate term, never a default. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "ObjectScopeTerm": {
+      "type": "object",
+      "description": "One object by ULID — including a ULID minted within this submission.",
+      "additionalProperties": false,
+      "required": ["kind", "object"],
+      "properties": {
+        "kind": { "const": "object" },
+        "object": { "$ref": "common.json#/$defs/Ulid" }
+      }
+    },
+    "SelectionScopeTerm": {
+      "type": "object",
+      "description": "A selection by ULID, with an optional '#group' suffix. Resolved against the pre-state at the declared head — a submission cannot widen its own scope.",
+      "additionalProperties": false,
+      "required": ["kind", "selection"],
+      "properties": {
+        "kind": { "const": "selection" },
+        "selection": { "$ref": "common.json#/$defs/Ref" }
+      }
+    },
+    "NetworkScopeTerm": {
+      "type": "object",
+      "description": "A network by ULID: covers pre-state members, objects the submission itself makes members, and the network object itself.",
+      "additionalProperties": false,
+      "required": ["kind", "network"],
+      "properties": {
+        "kind": { "const": "network" },
+        "network": { "$ref": "common.json#/$defs/Ulid" }
+      }
+    },
+    "RegionScopeTerm": {
+      "type": "object",
+      "description": "A closed polyline in project plan coordinates: covers objects whose pre- or post-state geometry intersects it.",
+      "additionalProperties": false,
+      "required": ["kind", "region"],
+      "properties": {
+        "kind": { "const": "region" },
+        "region": { "$ref": "geometry.json#/$defs/Region" }
+      }
+    },
+    "ProjectScopeTerm": {
+      "type": "object",
+      "description": "The explicit whole-project term. Deliberate and visible in the record — totality costs a keystroke.",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "project" }
+      }
+    },
+    "ScopeTerm": {
+      "description": "One typed scope term. A touched object is in scope if it matches any term.",
+      "oneOf": [
+        { "$ref": "#/$defs/ObjectScopeTerm" },
+        { "$ref": "#/$defs/SelectionScopeTerm" },
+        { "$ref": "#/$defs/NetworkScopeTerm" },
+        { "$ref": "#/$defs/RegionScopeTerm" },
+        { "$ref": "#/$defs/ProjectScopeTerm" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "ScopeDeclaration": {
+      "type": "array",
+      "description": "The submission's scope declaration: mandatory and non-empty.",
+      "items": { "$ref": "#/$defs/ScopeTerm" },
+      "minItems": 1
+    }
+  }
+}

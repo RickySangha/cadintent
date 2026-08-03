@@ -2,20 +2,68 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "common.json",
   "title": "cadintent common definitions",
-  "description": "Placeholder schema proving the schema->types pipeline. Real spec schemas are owned by later tickets and will replace this.",
+  "description": "Shared scalar and reference types for the cadintent wire format. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "x-cadintent-quanta": {
+    "description": "Per-quantity quantum registry (v0). Quanta are spec-fixed (no per-project overrides); the project's unit system selects the column. Values quantize on entry with decimal ROUND_HALF_UP and are stored as quantized decimal strings in SI metres; equality in diff and conformance is exact string equality.",
+    "rounding": "ROUND_HALF_UP",
+    "quantities": {
+      "coordinate": { "metric": "0.001 m", "imperial": "0.001 ft" },
+      "elevation": { "metric": "0.01 m", "imperial": "0.01 ft" },
+      "ratio": { "metric": "0.000000001", "imperial": "0.000000001" },
+      "architectural_dimension": { "metric": "0.001 m", "imperial": "1/16 in" }
+    }
+  },
   "$defs": {
-    "Point": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["x", "y"],
-      "properties": {
-        "x": { "type": "number" },
-        "y": { "type": "number" }
-      }
-    },
-    "Unit": {
+    "Ulid": {
       "type": "string",
-      "enum": ["m", "mm", "ft"]
+      "description": "A ULID in canonical 26-character Crockford base32 form. Object identity: minted by the author in the creating command, immutable for the object's life.",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$"
+    },
+    "Ref": {
+      "type": "string",
+      "description": "A payload reference to a design object: a single object ULID, or a selection ULID with an optional '#group' suffix naming one of the selection's groups. References are always by ULID, never by derived name.",
+      "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}(#[a-z][a-z0-9_]*)?$"
+    },
+    "GroupName": {
+      "type": "string",
+      "description": "The name of a group within a selection, referenced as '<ULID>#<group>'.",
+      "pattern": "^[a-z][a-z0-9_]*$"
+    },
+    "Role": {
+      "type": "string",
+      "description": "The closed set of author roles. Each command kind declares which roles may author it; enforced at fold time.",
+      "enum": ["engineer", "agent", "extractor", "compiler"]
+    },
+    "Author": {
+      "type": "string",
+      "description": "Who wrote a command: 'role:identity', e.g. 'engineer:ricky' or 'agent:claude'. The role prefix is drawn from the closed four-role set.",
+      "pattern": "^(engineer|agent|extractor|compiler):[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "CommandKind": {
+      "type": "string",
+      "description": "A command kind name: lowercase dotted segments, e.g. 'project.units', 'object.create', 'civil.conduit.create'.",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
+    "SpecVersion": {
+      "type": "string",
+      "description": "The spec version a command was validated against, stamped per command. Cites the x-cadintent-spec-version carried by the schema files.",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "DecimalString": {
+      "type": "string",
+      "description": "A quantized decimal number as a string. Quantized on entry to the quantum declared for its quantity in the x-cadintent-quanta registry (ROUND_HALF_UP); stored in SI metres where dimensioned. Never a JSON float.",
+      "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"
+    },
+    "PositiveDecimalString": {
+      "type": "string",
+      "description": "A strictly positive quantized decimal string (e.g. a radius).",
+      "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
+    },
+    "Sha256Hash": {
+      "type": "string",
+      "description": "A content hash: 'sha256:' followed by 64 lowercase hex digits.",
+      "pattern": "^sha256:[0-9a-f]{64}$"
     }
   }
 }

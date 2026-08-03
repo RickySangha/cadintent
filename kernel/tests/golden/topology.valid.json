@@ -1,0 +1,9 @@
+{
+  "schema": "topology.json",
+  "ref": "#/$defs/EdgeEnds",
+  "valid": true,
+  "document": {
+    "end_a": { "kind": "node", "node": "01ARZ3NDEKTSV4RRFFQ69G5FAV" },
+    "end_b": { "kind": "edge", "edge": "01BX5ZZKBKACTAV9WEVGEMMVRZ", "position": "12.345" }
+  }
+}

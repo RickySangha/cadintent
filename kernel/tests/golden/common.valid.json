@@ -1,0 +1,6 @@
+{
+  "schema": "common.json",
+  "ref": "#/$defs/Author",
+  "valid": true,
+  "document": "engineer:ricky"
+}

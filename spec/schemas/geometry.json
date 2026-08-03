@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "geometry.json",
+  "title": "cadintent core geometry",
+  "description": "Core geometry primitives: point, polyline (straight + bulge-arc segments), arc, circle — all in flat (x, y) plan coordinates. The model is 2.5D: elevations are typed quantities on objects, never a third coordinate. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "Point": {
+      "type": "object",
+      "description": "A position in project-local flat plan coordinates. Values are coordinate-quantum decimal strings in SI metres.",
+      "additionalProperties": false,
+      "required": ["x", "y"],
+      "properties": {
+        "x": { "$ref": "common.json#/$defs/DecimalString" },
+        "y": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "PolylineVertex": {
+      "type": "object",
+      "description": "One polyline vertex. 'bulge' = tan(sweep/4) of the circular-arc segment from this vertex to the next (positive = counter-clockwise); omitted or '0' means a straight segment. Ratio-quantum decimal string.",
+      "additionalProperties": false,
+      "required": ["point"],
+      "properties": {
+        "point": { "$ref": "#/$defs/Point" },
+        "bulge": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "PointGeometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "point"],
+      "properties": {
+        "kind": { "const": "point" },
+        "point": { "$ref": "#/$defs/Point" }
+      }
+    },
+    "PolylineGeometry": {
+      "type": "object",
+      "description": "An open or closed polyline of straight and bulge-arc segments. When closed, the segment from the last vertex back to the first (with the last vertex's bulge) closes the figure, and the polyline doubles as a region.",
+      "additionalProperties": false,
+      "required": ["kind", "vertices", "closed"],
+      "properties": {
+        "kind": { "const": "polyline" },
+        "vertices": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PolylineVertex" },
+          "minItems": 2
+        },
+        "closed": { "type": "boolean" }
+      }
+    },
+    "ArcGeometry": {
+      "type": "object",
+      "description": "A circular arc from 'start' to 'end' with 'bulge' = tan(sweep/4), non-zero (kernel-enforced), positive = counter-clockwise.",
+      "additionalProperties": false,
+      "required": ["kind", "start", "end", "bulge"],
+      "properties": {
+        "kind": { "const": "arc" },
+        "start": { "$ref": "#/$defs/Point" },
+        "end": { "$ref": "#/$defs/Point" },
+        "bulge": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "CircleGeometry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "center", "radius"],
+      "properties": {
+        "kind": { "const": "circle" },
+        "center": { "$ref": "#/$defs/Point" },
+        "radius": { "$ref": "common.json#/$defs/PositiveDecimalString" }
+      }
+    },
+    "Geometry": {
+      "description": "One core geometry primitive. Ellipses and splines are not core; they enter as tessellated arc-polylines with the original recorded as evidence.",
+      "oneOf": [
+        { "$ref": "#/$defs/PointGeometry" },
+        { "$ref": "#/$defs/PolylineGeometry" },
+        { "$ref": "#/$defs/ArcGeometry" },
+        { "$ref": "#/$defs/CircleGeometry" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "Region": {
+      "type": "object",
+      "description": "A closed polyline used as a region (e.g. a scope declaration's plan region).",
+      "additionalProperties": false,
+      "required": ["vertices", "closed"],
+      "properties": {
+        "vertices": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/PolylineVertex" },
+          "minItems": 3
+        },
+        "closed": { "const": true }
+      }
+    },
+    "ElevationKind": {
+      "type": "string",
+      "description": "The two elevation kinds — never interchangeable.",
+      "enum": ["surveyed", "interpolated"]
+    },
+    "Elevation": {
+      "type": "object",
+      "description": "A typed elevation quantity attached to an object — never a third coordinate on a point. Value is an elevation-quantum decimal string in SI metres; every elevation carries its kind and its sources.",
+      "additionalProperties": false,
+      "required": ["value", "kind", "sources"],
+      "properties": {
+        "value": { "$ref": "common.json#/$defs/DecimalString" },
+        "kind": { "$ref": "#/$defs/ElevationKind" },
+        "sources": {
+          "type": "array",
+          "description": "Where this elevation came from: typed citations (evidence for surveyed shots, commands for interpolations, statements for asserted values).",
+          "items": { "$ref": "basis.json#/$defs/BasisCitation" },
+          "minItems": 1
+        }
+      }
+    },
+    "UnitSystemDeclaration": {
+      "description": "A project's unit system: metric, or imperial with an explicit foot choice. Stored values are always SI metres; the unit system governs which quanta apply and how values are formatted at every boundary.",
+      "oneOf": [
+        { "$ref": "#/$defs/MetricUnitSystem" },
+        { "$ref": "#/$defs/ImperialUnitSystem" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "MetricUnitSystem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind"],
+      "properties": {
+        "kind": { "const": "metric" }
+      }
+    },
+    "ImperialUnitSystem": {
+      "type": "object",
+      "description": "Imperial units with an explicit, mandatory foot choice: international foot (0.3048 m exact) is the conventional default; US survey foot (1200/3937 m) only by deliberate opt-in.",
+      "additionalProperties": false,
+      "required": ["kind", "foot"],
+      "properties": {
+        "kind": { "const": "imperial" },
+        "foot": {
+          "type": "string",
+          "enum": ["international", "us_survey"]
+        }
+      }
+    },
+    "CrsDeclaration": {
+      "type": "object",
+      "description": "Optional metadata naming the real-world coordinate reference system the project's local plane corresponds to. Metadata only — the kernel never transforms coordinates.",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "The CRS identifier, e.g. 'EPSG:26910'.",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional human-readable description, e.g. 'NAD83 / UTM zone 10N'."
+        }
+      }
+    }
+  }
+}

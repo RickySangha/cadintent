@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "topology.json",
+  "title": "cadintent core topology",
+  "description": "Node / edge / network are core object categories, optional per object kind. Core edges are undirected; flow direction is pack vocabulary. The kernel's one topology guarantee is referential integrity. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "NodeBinding": {
+      "type": "object",
+      "description": "An edge end bound to a node.",
+      "additionalProperties": false,
+      "required": ["kind", "node"],
+      "properties": {
+        "kind": { "const": "node" },
+        "node": { "$ref": "common.json#/$defs/Ulid" }
+      }
+    },
+    "TapBinding": {
+      "type": "object",
+      "description": "An edge end bound to another edge mid-span (a tap: wye / inserta-tee). 'position' is the distance along the tapped edge's plan geometry from its end_a, a coordinate-quantum decimal string in SI metres. The tapped edge stays one object; the kernel enforces only that it exists.",
+      "additionalProperties": false,
+      "required": ["kind", "edge", "position"],
+      "properties": {
+        "kind": { "const": "edge" },
+        "edge": { "$ref": "common.json#/$defs/Ulid" },
+        "position": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "EndBinding": {
+      "description": "What one edge end binds to: a node, or another edge at a position along it.",
+      "oneOf": [
+        { "$ref": "#/$defs/NodeBinding" },
+        { "$ref": "#/$defs/TapBinding" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "EdgeEnds": {
+      "type": "object",
+      "description": "An edge's two distinguished, neutrally named ends. Per-end facts key off a and b; the binding carries no direction.",
+      "additionalProperties": false,
+      "required": ["end_a", "end_b"],
+      "properties": {
+        "end_a": { "$ref": "#/$defs/EndBinding" },
+        "end_b": { "$ref": "#/$defs/EndBinding" }
+      }
+    },
+    "NetworkMembership": {
+      "type": "array",
+      "description": "Network membership as a fact on the member: a list of network ULIDs (usually one; an object serving two systems belongs to both). The kernel enforces that referenced networks exist.",
+      "items": { "$ref": "common.json#/$defs/Ulid" },
+      "uniqueItems": true
+    }
+  }
+}

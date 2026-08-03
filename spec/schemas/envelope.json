@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "envelope.json",
+  "title": "cadintent command envelope",
+  "description": "The fixed nine fields wrapped around every accepted command in a project's log. The payload inside varies by kind (validated against the kind's payload schema); the envelope never does. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "Envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "project",
+        "seq",
+        "batch",
+        "author",
+        "kind",
+        "payload",
+        "basis",
+        "created_at",
+        "spec"
+      ],
+      "properties": {
+        "project": {
+          "$ref": "common.json#/$defs/Ulid",
+          "description": "The project whose log this entry belongs to."
+        },
+        "seq": {
+          "type": "integer",
+          "description": "This command's entry number in the project's log; the highest seq is the head. Kernel-assigned at acceptance, starting at 1.",
+          "minimum": 1
+        },
+        "batch": {
+          "$ref": "common.json#/$defs/Ulid",
+          "description": "The submission this command landed with. Every command in a submission is stamped with the same kernel-minted batch ULID."
+        },
+        "author": { "$ref": "common.json#/$defs/Author" },
+        "kind": { "$ref": "common.json#/$defs/CommandKind" },
+        "payload": {
+          "type": "object",
+          "description": "The kind-specific payload, validated against the schema the kind declares."
+        },
+        "basis": { "$ref": "basis.json#/$defs/Basis" },
+        "created_at": {
+          "type": "string",
+          "description": "Kernel-stamped RFC 3339 UTC timestamp at acceptance. Ignored by fold: replay is determined by content and order only.",
+          "format": "date-time"
+        },
+        "spec": { "$ref": "common.json#/$defs/SpecVersion" }
+      }
+    }
+  }
+}

@@ -1,0 +1,266 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "commands.json",
+  "title": "cadintent core command payloads",
+  "description": "Payload schemas for the core command kinds. The envelope's 'kind' selects which payload schema applies; each payload def carries an 'x-cadintent-command' annotation declaring its kind name, allowed author roles, and basis requiredness ('required' = basis must be non-empty; 'optional' = may be empty). Packs specialize the generic object.* shapes and may only tighten these declarations. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "ImportRef": {
+      "type": "object",
+      "description": "An exact-version pin of an imported artifact (rule registry or presentation pack).",
+      "additionalProperties": false,
+      "required": ["id", "version", "content_hash"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" }
+      }
+    },
+    "ProjectUnitsPayload": {
+      "type": "object",
+      "description": "Declares the project's unit system. Required before any design-content command (missing_declaration otherwise); declared exactly once and immutable for the life of the log (immutable_declaration on re-declaration).",
+      "x-cadintent-command": {
+        "kind": "project.units",
+        "authorRoles": ["engineer"],
+        "basis": "optional",
+        "declarationClass": "required-once-immutable"
+      },
+      "additionalProperties": false,
+      "required": ["system"],
+      "properties": {
+        "system": { "$ref": "geometry.json#/$defs/UnitSystemDeclaration" }
+      }
+    },
+    "ProjectCrsPayload": {
+      "type": "object",
+      "description": "Declares the CRS the project's local plane corresponds to. Metadata only; optional, re-declarable, latest-wins.",
+      "x-cadintent-command": {
+        "kind": "project.crs",
+        "authorRoles": ["engineer"],
+        "basis": "optional",
+        "declarationClass": "latest-wins"
+      },
+      "additionalProperties": false,
+      "required": ["crs"],
+      "properties": {
+        "crs": { "$ref": "geometry.json#/$defs/CrsDeclaration" }
+      }
+    },
+    "RegistryImportPayload": {
+      "type": "object",
+      "description": "Imports a rule-registry version into the project. Additive and repeatable; each import pins an exact version and is never retracted or mutated. An import must precede any command citing it.",
+      "x-cadintent-command": {
+        "kind": "registry.import",
+        "authorRoles": ["engineer"],
+        "basis": "optional",
+        "declarationClass": "additive-import"
+      },
+      "additionalProperties": false,
+      "required": ["registry"],
+      "properties": {
+        "registry": { "$ref": "#/$defs/ImportRef" }
+      }
+    },
+    "PresentationImportPayload": {
+      "type": "object",
+      "description": "Imports a presentation-pack version into the project. Same additive, version-pinned machinery as registry.import.",
+      "x-cadintent-command": {
+        "kind": "presentation.import",
+        "authorRoles": ["engineer"],
+        "basis": "optional",
+        "declarationClass": "additive-import"
+      },
+      "additionalProperties": false,
+      "required": ["pack"],
+      "properties": {
+        "pack": { "$ref": "#/$defs/ImportRef" }
+      }
+    },
+    "SelectionGroup": {
+      "type": "object",
+      "description": "One named group within a selection, referenced later as '<selection ULID>#<name>'.",
+      "additionalProperties": false,
+      "required": ["name", "objects"],
+      "properties": {
+        "name": { "$ref": "common.json#/$defs/GroupName" },
+        "objects": {
+          "type": "array",
+          "items": { "$ref": "common.json#/$defs/Ulid" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "ExplicitSelectionCriteria": {
+      "type": "object",
+      "description": "The v0 minimal criteria shape: an explicit object list with optional named groups. The full criteria vocabulary (predicates over layers, regions, classification by offset, ...) is deliberately unmapped; future criteria kinds extend the SelectionCriteria union.",
+      "additionalProperties": false,
+      "required": ["kind", "objects"],
+      "properties": {
+        "kind": { "const": "explicit" },
+        "objects": {
+          "type": "array",
+          "items": { "$ref": "common.json#/$defs/Ulid" },
+          "uniqueItems": true
+        },
+        "groups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/SelectionGroup" }
+        }
+      }
+    },
+    "SelectionCriteria": {
+      "description": "What a selection selects. v0 ships only the explicit kind; membership is resolved at replay and recorded in the derivation record.",
+      "oneOf": [{ "$ref": "#/$defs/ExplicitSelectionCriteria" }],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "SelectionDefinePayload": {
+      "type": "object",
+      "description": "Creates or redefines a selection: a first-class object defined by criteria, carrying its own author-minted ULID. Mutates no design fact; exempt from the scope audit.",
+      "x-cadintent-command": {
+        "kind": "selection.define",
+        "authorRoles": ["engineer", "agent"],
+        "basis": "optional",
+        "scopeAuditExempt": true
+      },
+      "additionalProperties": false,
+      "required": ["object", "criteria"],
+      "properties": {
+        "object": {
+          "$ref": "common.json#/$defs/Ulid",
+          "description": "The selection's own ULID, minted by the author."
+        },
+        "criteria": { "$ref": "#/$defs/SelectionCriteria" }
+      }
+    },
+    "StringAttr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "string" },
+        "value": { "type": "string" }
+      }
+    },
+    "BooleanAttr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "boolean" },
+        "value": { "type": "boolean" }
+      }
+    },
+    "IntegerAttr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "integer" },
+        "value": { "type": "integer" }
+      }
+    },
+    "QuantityAttr": {
+      "type": "object",
+      "description": "A quantized decimal quantity; which quantum applies is declared by the object kind's attribute schema (pack-owned).",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "quantity" },
+        "value": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "ElevationAttr": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "elevation" },
+        "value": { "$ref": "geometry.json#/$defs/Elevation" }
+      }
+    },
+    "ReferenceAttr": {
+      "type": "object",
+      "description": "A reference-valued attribute: another object's ULID, never a derived name.",
+      "additionalProperties": false,
+      "required": ["kind", "value"],
+      "properties": {
+        "kind": { "const": "reference" },
+        "value": { "$ref": "common.json#/$defs/Ulid" }
+      }
+    },
+    "AttrValue": {
+      "description": "One typed attribute value.",
+      "oneOf": [
+        { "$ref": "#/$defs/StringAttr" },
+        { "$ref": "#/$defs/BooleanAttr" },
+        { "$ref": "#/$defs/IntegerAttr" },
+        { "$ref": "#/$defs/QuantityAttr" },
+        { "$ref": "#/$defs/ElevationAttr" },
+        { "$ref": "#/$defs/ReferenceAttr" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "AttrMap": {
+      "type": "object",
+      "description": "Attribute name -> typed value. Which names are meaningful for an object kind is pack-owned; the kernel stores what lands.",
+      "additionalProperties": { "$ref": "#/$defs/AttrValue" }
+    },
+    "ObjectCreatePayload": {
+      "type": "object",
+      "description": "Creates a design object. 'type' names the object kind (pack-defined, e.g. 'civil.manhole'); whether 'ends' / 'networks' are meaningful is declared by that kind's topology category. Packs specialize this shape.",
+      "x-cadintent-command": {
+        "kind": "object.create",
+        "authorRoles": ["engineer", "agent", "extractor", "compiler"],
+        "basis": "optional"
+      },
+      "additionalProperties": false,
+      "required": ["object", "type"],
+      "properties": {
+        "object": {
+          "$ref": "common.json#/$defs/Ulid",
+          "description": "The new object's ULID, minted by the author."
+        },
+        "type": {
+          "$ref": "common.json#/$defs/CommandKind",
+          "description": "The object kind name, dotted like command kinds (e.g. 'civil.manhole')."
+        },
+        "geometry": { "$ref": "geometry.json#/$defs/Geometry" },
+        "attrs": { "$ref": "#/$defs/AttrMap" },
+        "ends": { "$ref": "topology.json#/$defs/EdgeEnds" },
+        "networks": { "$ref": "topology.json#/$defs/NetworkMembership" }
+      }
+    },
+    "ObjectSetAttrsPayload": {
+      "type": "object",
+      "description": "Sets facts on an existing object (or each member of a selection/group): attribute values, geometry, edge-end bindings, or network membership. Only the fields present are written.",
+      "x-cadintent-command": {
+        "kind": "object.set_attrs",
+        "authorRoles": ["engineer", "agent", "extractor", "compiler"],
+        "basis": "optional"
+      },
+      "additionalProperties": false,
+      "required": ["target"],
+      "properties": {
+        "target": { "$ref": "common.json#/$defs/Ref" },
+        "attrs": { "$ref": "#/$defs/AttrMap" },
+        "geometry": { "$ref": "geometry.json#/$defs/Geometry" },
+        "ends": { "$ref": "topology.json#/$defs/EdgeEnds" },
+        "networks": { "$ref": "topology.json#/$defs/NetworkMembership" }
+      }
+    },
+    "ObjectRemovePayload": {
+      "type": "object",
+      "description": "Removes an object (or each member of a selection/group). Removing a still-referenced object refuses with dangling_reference; rewire or remove dependents in the same submission.",
+      "x-cadintent-command": {
+        "kind": "object.remove",
+        "authorRoles": ["engineer", "agent", "extractor", "compiler"],
+        "basis": "optional"
+      },
+      "additionalProperties": false,
+      "required": ["target"],
+      "properties": {
+        "target": { "$ref": "common.json#/$defs/Ref" }
+      }
+    }
+  }
+}

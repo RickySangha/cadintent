@@ -1,0 +1,14 @@
+{
+  "schema": "geometry.json",
+  "ref": "#/$defs/Geometry",
+  "valid": true,
+  "document": {
+    "kind": "polyline",
+    "vertices": [
+      { "point": { "x": "100.000", "y": "200.000" } },
+      { "point": { "x": "150.000", "y": "200.000" }, "bulge": "0.414213562" },
+      { "point": { "x": "150.000", "y": "250.000" } }
+    ],
+    "closed": false
+  }
+}

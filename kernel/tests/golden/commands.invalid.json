@@ -1,0 +1,9 @@
+{
+  "schema": "commands.json",
+  "ref": "#/$defs/ProjectUnitsPayload",
+  "valid": false,
+  "comment": "Imperial requires an explicit foot choice — there is no implicit default.",
+  "document": {
+    "system": { "kind": "imperial" }
+  }
+}

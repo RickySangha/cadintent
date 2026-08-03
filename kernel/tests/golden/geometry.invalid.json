@@ -1,0 +1,10 @@
+{
+  "schema": "geometry.json",
+  "ref": "#/$defs/Geometry",
+  "valid": false,
+  "comment": "Coordinates must be quantized decimal strings, never JSON floats.",
+  "document": {
+    "kind": "point",
+    "point": { "x": 100.0, "y": 200.5 }
+  }
+}

@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 from typing import Annotated, Any
-from pydantic import BaseModel, ConfigDict, Field, RootModel
+from pydantic import Field, RootModel
 from enum import StrEnum
 
 
@@ -11,21 +11,104 @@ class CadintentCommonDefinitions(RootModel[Any]):
     root: Annotated[
         Any,
         Field(
-            description='Placeholder schema proving the schema->types pipeline. Real spec schemas are owned by later tickets and will replace this.',
+            description='Shared scalar and reference types for the cadintent wire format. Spec version 0.1.0.',
             title='cadintent common definitions',
         ),
     ]
 
 
-class Point(BaseModel):
-    model_config = ConfigDict(
-        extra='forbid',
-    )
-    x: float
-    y: float
+class Ulid(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="A ULID in canonical 26-character Crockford base32 form. Object identity: minted by the author in the creating command, immutable for the object's life.",
+            pattern='^[0-7][0-9A-HJKMNP-TV-Z]{25}$',
+        ),
+    ]
 
 
-class Unit(StrEnum):
-    m = 'm'
-    mm = 'mm'
-    ft = 'ft'
+class Ref(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="A payload reference to a design object: a single object ULID, or a selection ULID with an optional '#group' suffix naming one of the selection's groups. References are always by ULID, never by derived name.",
+            pattern='^[0-7][0-9A-HJKMNP-TV-Z]{25}(#[a-z][a-z0-9_]*)?$',
+        ),
+    ]
+
+
+class GroupName(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="The name of a group within a selection, referenced as '<ULID>#<group>'.",
+            pattern='^[a-z][a-z0-9_]*$',
+        ),
+    ]
+
+
+class Role(StrEnum):
+    engineer = 'engineer'
+    agent = 'agent'
+    extractor = 'extractor'
+    compiler = 'compiler'
+
+
+class Author(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="Who wrote a command: 'role:identity', e.g. 'engineer:ricky' or 'agent:claude'. The role prefix is drawn from the closed four-role set.",
+            pattern='^(engineer|agent|extractor|compiler):[A-Za-z0-9][A-Za-z0-9._-]*$',
+        ),
+    ]
+
+
+class CommandKind(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="A command kind name: lowercase dotted segments, e.g. 'project.units', 'object.create', 'civil.conduit.create'.",
+            pattern='^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$',
+        ),
+    ]
+
+
+class SpecVersion(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description='The spec version a command was validated against, stamped per command. Cites the x-cadintent-spec-version carried by the schema files.',
+            pattern='^[0-9]+\\.[0-9]+\\.[0-9]+$',
+        ),
+    ]
+
+
+class DecimalString(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description='A quantized decimal number as a string. Quantized on entry to the quantum declared for its quantity in the x-cadintent-quanta registry (ROUND_HALF_UP); stored in SI metres where dimensioned. Never a JSON float.',
+            pattern='^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$',
+        ),
+    ]
+
+
+class PositiveDecimalString(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description='A strictly positive quantized decimal string (e.g. a radius).',
+            pattern='^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$',
+        ),
+    ]
+
+
+class Sha256Hash(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="A content hash: 'sha256:' followed by 64 lowercase hex digits.",
+            pattern='^sha256:[0-9a-f]{64}$',
+        ),
+    ]

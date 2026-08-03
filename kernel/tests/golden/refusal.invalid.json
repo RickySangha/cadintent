@@ -1,0 +1,18 @@
+{
+  "schema": "refusal.json",
+  "ref": "#/$defs/Refusal",
+  "valid": false,
+  "comment": "Refusal code outside the closed list of 13.",
+  "document": {
+    "project": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "declared_head": 3,
+    "errors": [
+      {
+        "code": "bad_vibes",
+        "command": 0,
+        "path": "/payload",
+        "message": "Not a real code."
+      }
+    ]
+  }
+}

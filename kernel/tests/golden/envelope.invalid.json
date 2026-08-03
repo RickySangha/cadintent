@@ -1,0 +1,16 @@
+{
+  "schema": "envelope.json",
+  "ref": "#/$defs/Envelope",
+  "valid": false,
+  "comment": "Missing the spec stamp — all nine envelope fields are required.",
+  "document": {
+    "project": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "seq": 1,
+    "batch": "01BX5ZZKBKACTAV9WEVGEMMVRZ",
+    "author": "engineer:ricky",
+    "kind": "project.units",
+    "payload": { "system": { "kind": "metric" } },
+    "basis": [],
+    "created_at": "2026-08-02T12:00:00Z"
+  }
+}

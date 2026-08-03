@@ -1,0 +1,26 @@
+{
+  "schema": "commands.json",
+  "ref": "#/$defs/ObjectSetAttrsPayload",
+  "valid": true,
+  "document": {
+    "target": "01BX5ZZKBKACTAV9WEVGEMMVRZ#on_line",
+    "attrs": {
+      "material": { "kind": "string", "value": "PVC" },
+      "rim": {
+        "kind": "elevation",
+        "value": {
+          "value": "104.31",
+          "kind": "surveyed",
+          "sources": [
+            {
+              "kind": "evidence",
+              "content_hash": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+              "entity": "SHOT:118"
+            }
+          ]
+        }
+      }
+    },
+    "networks": ["01H455VB4PEX5VSKNK084TN2ZM"]
+  }
+}

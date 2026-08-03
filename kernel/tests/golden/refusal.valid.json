@@ -1,0 +1,23 @@
+{
+  "schema": "refusal.json",
+  "ref": "#/$defs/Refusal",
+  "valid": true,
+  "document": {
+    "project": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "declared_head": 41,
+    "errors": [
+      {
+        "code": "stale_head",
+        "command": null,
+        "path": "/head",
+        "message": "Declared head 41 but the log is at 44."
+      },
+      {
+        "code": "unknown_reference",
+        "command": 1,
+        "path": "/payload/target",
+        "message": "No object 01H455VB4PEX5VSKNK084TN2ZM at the declared head."
+      }
+    ]
+  }
+}

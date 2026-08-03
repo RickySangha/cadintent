@@ -1,0 +1,7 @@
+{
+  "schema": "common.json",
+  "ref": "#/$defs/Author",
+  "valid": false,
+  "comment": "Role outside the closed four-role set.",
+  "document": "plumber:bob"
+}

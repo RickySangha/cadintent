@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "refusal.json",
+  "title": "cadintent refusal document",
+  "description": "The kernel's total rejection of a submission — nothing lands, the log is untouched. Every error in the submission is reported at once. Conformance compares refusals by their typed (code, command position, field path) triples; messages are outside the contract. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "RefusalCode": {
+      "type": "string",
+      "description": "The closed v0 list of 13 typed refusal codes.",
+      "enum": [
+        "stale_head",
+        "schema_violation",
+        "unknown_kind",
+        "author_role_violation",
+        "id_collision",
+        "unknown_reference",
+        "name_collision",
+        "missing_basis",
+        "scope_violation",
+        "spec_unsupported",
+        "dangling_reference",
+        "missing_declaration",
+        "immutable_declaration"
+      ]
+    },
+    "RefusalError": {
+      "type": "object",
+      "description": "One error in the refused submission.",
+      "additionalProperties": false,
+      "required": ["code", "command", "path", "message"],
+      "properties": {
+        "code": { "$ref": "#/$defs/RefusalCode" },
+        "command": {
+          "type": ["integer", "null"],
+          "description": "The 0-based position of the offending command in the submission's command list, or null for a submission-level error (e.g. stale_head, scope_violation).",
+          "minimum": 0
+        },
+        "path": {
+          "type": "string",
+          "description": "A JSON Pointer to the offending field, relative to the command at 'command' (or to the submission document when 'command' is null). Empty string points at the whole target."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable detail. Outside the conformance contract."
+        }
+      }
+    },
+    "Refusal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project", "declared_head", "errors"],
+      "properties": {
+        "project": {
+          "$ref": "common.json#/$defs/Ulid",
+          "description": "The project the refused submission targeted."
+        },
+        "declared_head": {
+          "type": ["integer", "null"],
+          "description": "The head the submission declared, or null when the submission was too malformed to read one.",
+          "minimum": 0
+        },
+        "errors": {
+          "type": "array",
+          "description": "Every error found, reported at once.",
+          "items": { "$ref": "#/$defs/RefusalError" },
+          "minItems": 1
+        }
+      }
+    }
+  }
+}

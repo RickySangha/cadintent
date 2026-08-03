@@ -1,0 +1,21 @@
+{
+  "schema": "basis.json",
+  "ref": "#/$defs/Basis",
+  "valid": true,
+  "document": [
+    {
+      "kind": "rule",
+      "registry": "acme-civil-rules",
+      "version": "2.3.0",
+      "name": "crown_from_pl",
+      "params": { "cover": "1.50" }
+    },
+    {
+      "kind": "evidence",
+      "content_hash": "sha256:9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
+      "entity": "DXF:2A7F"
+    },
+    { "kind": "command", "seq": 12 },
+    { "kind": "statement", "text": "Per city standard, min cover is 1.5 m on this street." }
+  ]
+}

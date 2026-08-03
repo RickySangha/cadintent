@@ -1,0 +1,7 @@
+{
+  "schema": "scope.json",
+  "ref": "#/$defs/ScopeDeclaration",
+  "valid": false,
+  "comment": "A scope declaration is mandatory and non-empty — there is no opt-out, only the explicit project term.",
+  "document": []
+}

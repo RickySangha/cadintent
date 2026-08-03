@@ -1,0 +1,32 @@
+{
+  "schema": "submission.json",
+  "ref": "#/$defs/Submission",
+  "valid": true,
+  "document": {
+    "project": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "head": 0,
+    "scope": [{ "kind": "project" }],
+    "commands": [
+      {
+        "author": "engineer:ricky",
+        "kind": "project.units",
+        "payload": { "system": { "kind": "imperial", "foot": "international" } },
+        "basis": [],
+        "spec": "0.1.0"
+      },
+      {
+        "author": "engineer:ricky",
+        "kind": "object.create",
+        "payload": {
+          "object": "01H455VB4PEX5VSKNK084TN2ZM",
+          "type": "civil.manhole",
+          "geometry": { "kind": "point", "point": { "x": "1000.000", "y": "2000.000" } }
+        },
+        "basis": [
+          { "kind": "statement", "text": "New manhole per markup dated 2026-07-30." }
+        ],
+        "spec": "0.1.0"
+      }
+    ]
+  }
+}

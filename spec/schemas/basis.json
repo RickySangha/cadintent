@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "basis.json",
+  "title": "cadintent basis citations",
+  "description": "A command's citations: the rules, source evidence, and calculations it rests on. Closed set of four citation kinds. Whether basis may be empty is declared per command kind. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "RuleCitation": {
+      "type": "object",
+      "description": "Cites a named, parameterized rule entry in an imported rule registry, pinning the exact imported version. The command carries the evaluated, quantized value in its payload; this citation records what produced it. Fold never evaluates the rule.",
+      "additionalProperties": false,
+      "required": ["kind", "registry", "version", "name", "params"],
+      "properties": {
+        "kind": { "const": "rule" },
+        "registry": {
+          "type": "string",
+          "description": "The id of the imported rule registry the entry lives in.",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "description": "The exact registry version imported into this project that the citation resolves against.",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "description": "The rule entry's name within the registry, e.g. 'crown_from_pl'.",
+          "minLength": 1
+        },
+        "params": {
+          "type": "object",
+          "description": "The parameter values the rule was evaluated with."
+        }
+      }
+    },
+    "EvidenceCitation": {
+      "type": "object",
+      "description": "Cites source evidence: a source-file content hash and a native entity reference within it, always bound together. A bare native handle is never a citation.",
+      "additionalProperties": false,
+      "required": ["kind", "content_hash", "entity"],
+      "properties": {
+        "kind": { "const": "evidence" },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" },
+        "entity": {
+          "type": "string",
+          "description": "The native entity reference within the hashed source file, e.g. a DXF handle.",
+          "minLength": 1
+        }
+      }
+    },
+    "CommandCitation": {
+      "type": "object",
+      "description": "Cites an earlier entry in this project's log by its seq.",
+      "additionalProperties": false,
+      "required": ["kind", "seq"],
+      "properties": {
+        "kind": { "const": "command" },
+        "seq": {
+          "type": "integer",
+          "description": "The seq of the earlier log entry cited.",
+          "minimum": 1
+        }
+      }
+    },
+    "StatementCitation": {
+      "type": "object",
+      "description": "A human assertion — the durable landing place for rules and facts stated in conversation.",
+      "additionalProperties": false,
+      "required": ["kind", "text"],
+      "properties": {
+        "kind": { "const": "statement" },
+        "text": {
+          "type": "string",
+          "description": "The assertion, verbatim.",
+          "minLength": 1
+        }
+      }
+    },
+    "BasisCitation": {
+      "description": "One typed citation. The closed set of four kinds: rule, evidence, command, statement.",
+      "oneOf": [
+        { "$ref": "#/$defs/RuleCitation" },
+        { "$ref": "#/$defs/EvidenceCitation" },
+        { "$ref": "#/$defs/CommandCitation" },
+        { "$ref": "#/$defs/StatementCitation" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "Basis": {
+      "type": "array",
+      "description": "A command's basis: a list of typed citations. Whether it may be empty is declared per command kind.",
+      "items": { "$ref": "#/$defs/BasisCitation" }
+    }
+  }
+}
