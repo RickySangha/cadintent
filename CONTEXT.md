@@ -250,6 +250,57 @@ the whole submission (`scope_violation`), naming each stray object, its field
 changes, and the terms it failed. Selection-definition commands are exempt:
 they mutate no design fact.
 
+## Label rule
+
+A pack-defined mapping from model facts to drawing text: a structural
+predicate saying which objects it labels (and when it applies at all), a
+content spec — an ordered list of literal and field segments, each field
+carrying its display unit, quantum, and ROUND_HALF_UP formatting — and a
+naive anchor + offset for placement. Content is always derived; only
+placement is human-owned.
+
+## Symbol catalog
+
+A pack's versioned list of drawing symbols: each entry names its attribute
+tags and whether its size is paper-fixed or true-to-model, and an ordered
+first-match mapping decides which symbol an object gets. Rotation comes
+from a closed set of sources — fixed, from declared flow in or out, or the
+edge tangent — with a mandatory fallback angle and a visible finding when
+a computed source cannot resolve.
+
+## Text style
+
+A named presentation entry — layer, font, height in paper millimetres,
+width factor, justification, rotation — that label rules reference by
+name. Model-space height is computed from drawing scale at render, never
+stored. Backends map style names to native concepts and must document
+anything they cannot honour.
+
+## Presentation pack
+
+A versioned, content-hashed artifact bundling text styles, label rules,
+and a symbol catalog, imported into a project by a logged declaration —
+the same machinery as a rule registry. Layers resolve nearest-first
+(project over office over pack defaults) per named entry, by whole-entry
+replacement — never a field-level merge — so every resolved entry is
+attributable to exactly one pack version.
+
+## Render report
+
+The per-render artifact a backend emits beside its output: renderer findings
+(rotation fallbacks, unstyled layers, placeholder symbols, sanitize actions)
+in the same typed finding shape as pack checks, citing the log head, spec
+stamp, presentation pack versions, and drawing scale rendered from. A
+separate channel from pack-check results — checks judge the model, a render
+report judges one output artifact.
+
+## Renderer limitations
+
+The normative, documented list each backend ships of catalog features it
+renders differently or not at all. For a listed feature, verification
+degrades to property-level checks explicitly; an undocumented divergence is
+a conformance failure.
+
 ## CRS declaration
 
 An optional recorded fact naming the real-world coordinate reference system a
