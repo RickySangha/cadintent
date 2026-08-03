@@ -172,6 +172,84 @@ refused (`dangling_reference`); the submission must rewire or remove the
 dependents atomically. Everything semantic — cycles, orphans, self-loops,
 hydraulic sanity — belongs to pack checks.
 
+## Conformance case
+
+One self-contained test of a conforming implementation: a setup log plus
+submissions in, and expected bytes out — a canonical snapshot or diff
+compared byte-for-byte, or a refusal compared by its typed triples
+(code, command position, field path). Cases pin the spec version they
+target; a case the implementation cannot run reports could-not-run,
+never pass. Messages in refusals are outside the contract.
+
+## Invert
+
+The elevation of the inside bottom of a pipe at one of its ends — a typed
+elevation fact stored per conduit end (`end_a`/`end_b`), never on the
+structure it connects to. "The inverts at a manhole" is always a derived
+view of the ends bound there; the schema has no slot for a second copy.
+
+## Conduit
+
+The civil pack's single edge kind — a gravity pipe or culvert in a sanitary
+or storm network. Which system it serves is its network membership, not its
+type. Slope and length are never stored on a conduit; both are derived from
+its end inverts and plan geometry.
+
+## Structure
+
+The civil pack's node kinds — manhole, catch basin, outfall (incl.
+headwalls), and a generic structure with a free-text description. A
+structure carries its own elevations (rim, sump) but never the inverts of
+connecting pipes; only its location is required at creation, with missing
+expected facts reported as completeness findings.
+
+## Pack vocabulary
+
+A versioned list of recommended values (e.g. pipe materials) published by a
+pack beside its schema. Fields like material stay open strings; a check
+flags off-list values as findings, never refusals — the world, not the
+spec, owns such lists. Closed enums are reserved for values whose semantics
+the spec itself keys off (conduit shape, network system).
+
+## Rule
+
+A named, parameterized derivation ("crown_from_pl") defined in a registry
+entry — never executable code. Commands carry the evaluated, quantized value
+in their payload; the rule citation records what produced it. Fold never
+evaluates a rule; re-deriving and comparing is a check's job.
+
+## Rule registry
+
+A versioned, content-hashed data artifact of rule entries — closed and
+no-eval. Released versions are immutable; changes are new versions, and
+deprecated entries remain resolvable forever. A project imports a registry by
+a logged declaration; rule citations pin the exact imported version. Taught
+rules land as project-local entries defined by commands in the log.
+
+## Verification status
+
+The two-value marker on every rule entry: engineer-verified or unverified
+placeholder. Only verified entries can back a compliance pass; a check judged
+against an unverified entry says so visibly, and a missing required value is
+a refusal or finding, never a default.
+
+## Scope declaration
+
+The blast radius a submission claims before it lands: a mandatory, non-empty
+list of typed terms — an object ULID, a selection (with optional group), a
+network, a plan region, or the explicit whole-project term. Resolved against
+the submission's declared head; recorded with the accepted batch. Whole-project
+scope is always a deliberate declaration, never a default.
+
+## Scope audit
+
+The kernel's acceptance-time comparison of a submission's actual effect — its
+canonical diff, every touched object including provenance-only rewrites —
+against its scope declaration. Any object outside every declared term refuses
+the whole submission (`scope_violation`), naming each stray object, its field
+changes, and the terms it failed. Selection-definition commands are exempt:
+they mutate no design fact.
+
 ## CRS declaration
 
 An optional recorded fact naming the real-world coordinate reference system a
