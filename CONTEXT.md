@@ -132,6 +132,46 @@ native to the project's unit system, applied with ROUND_HALF_UP. Values are
 stored as quantized decimal strings, so equality in diff and conformance is
 exact, never fuzzy.
 
+## Node
+
+A point-like design object that edges connect to — a manhole, catch basin, or
+headwall in the civil pack. A core object category, not a mandate: an object
+is topological only if its kind says so.
+
+## Edge
+
+A span-like design object with two distinguished ends, `end_a` and `end_b`,
+named without direction. Each end binds to a node — or taps another edge
+mid-span. Per-end facts (an invert at each end) key off a and b. Core edges
+carry no flow direction.
+
+## Tap
+
+An edge end bound to another edge at a position along it, rather than to a
+node — a wye or inserta-tee. The tapped main stays one object; the tap is
+real topology the kernel sees.
+
+## Network
+
+A first-class object grouping nodes and edges into one system — a sanitary
+or storm network. Membership is a fact on the member: a list of network IDs,
+usually one. An object serving two systems belongs to both.
+
+## Flow direction
+
+A declared per-edge fact in the civil pack — a→b or b→a — never part of core
+topology. A pack check re-derives direction from inverts; disagreement, or a
+flat or adverse grade, is a finding carrying both values, never a silent pick.
+
+## Referential integrity
+
+The kernel's one topology guarantee: after every submission folds, every
+topology reference resolves — edge ends hit existing nodes or edges,
+memberships hit existing networks. Removing a still-referenced object is
+refused (`dangling_reference`); the submission must rewire or remove the
+dependents atomically. Everything semantic — cycles, orphans, self-loops,
+hydraulic sanity — belongs to pack checks.
+
 ## CRS declaration
 
 An optional recorded fact naming the real-world coordinate reference system a
