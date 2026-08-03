@@ -1,0 +1,46 @@
+{
+  "schema": "finding.json",
+  "ref": "#/$defs/CheckRun",
+  "valid": true,
+  "document": {
+    "spec": "0.1.0",
+    "project": "01ARZ3NDEKTSV4RRFFQ69G5FAV",
+    "head": 12,
+    "pack": { "id": "civil", "version": "0.1.0" },
+    "results": [
+      {
+        "check": "civil.flow_vs_invert",
+        "status": "findings",
+        "evaluated": 3,
+        "vacuous": false,
+        "findings": [
+          {
+            "check": "civil.flow_vs_invert",
+            "subjects": ["01BX5ZZKBKACTAV9WEVGEMMVRZ"],
+            "values": {
+              "declared": "a_to_b",
+              "derived": "b_to_a",
+              "invert_a": "97.10",
+              "invert_b": "97.42"
+            },
+            "judged_against": {
+              "kind": "schema",
+              "pack": "civil",
+              "version": "0.1.0",
+              "rule": "declared flow_direction must match the invert-derived direction; tolerance 0"
+            },
+            "message": "declared flow disagrees with the invert-derived direction"
+          }
+        ]
+      },
+      {
+        "check": "civil.min_slope",
+        "status": "not_run",
+        "evaluated": 0,
+        "vacuous": true,
+        "findings": [],
+        "reason": "no minimum-slope values are declared for this project (no default minima)"
+      }
+    ]
+  }
+}

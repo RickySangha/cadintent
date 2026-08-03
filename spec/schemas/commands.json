@@ -76,6 +76,50 @@
         "pack": { "$ref": "#/$defs/ImportRef" }
       }
     },
+    "RuleDefinePayload": {
+      "type": "object",
+      "description": "Creates a project-local rule-registry entry, status 'unverified'. Anyone (typically an agent) may author it; basis is required and its statement citation ancestry is permanent — basis is immutable, so the entry's lineage back to the engineer's words never breaks. The entry is cited as {registry: 'project', version: <seq of this command>, name, params} — the same citation shape as shipped registries, pinned by the log itself.",
+      "x-cadintent-command": {
+        "kind": "rule.define",
+        "authorRoles": ["engineer", "agent"],
+        "basis": "required",
+        "scopeAuditExempt": true
+      },
+      "additionalProperties": false,
+      "required": ["name", "params", "result", "semantics"],
+      "properties": {
+        "name": { "$ref": "common.json#/$defs/RuleName" },
+        "params": {
+          "type": "object",
+          "description": "JSON Schema for the rule's parameter object (see registry.json RuleEntry)."
+        },
+        "result": { "$ref": "registry.json#/$defs/RuleResult" },
+        "semantics": {
+          "type": "string",
+          "description": "Normative human-readable description of the derivation.",
+          "minLength": 1
+        },
+        "value": {
+          "$ref": "common.json#/$defs/DecimalString",
+          "description": "The quantized constant value for constant-valued entries (e.g. a taught minimum)."
+        }
+      }
+    },
+    "RuleVerifyPayload": {
+      "type": "object",
+      "description": "Flips the latest project-local rule entry with this name to 'verified'. Engineer-only — verification is itself a logged fact with author, time, and basis; the author-role restriction is enforced at fold, not policy. Verifying a name with no project-local entry refuses (unknown_reference).",
+      "x-cadintent-command": {
+        "kind": "rule.verify",
+        "authorRoles": ["engineer"],
+        "basis": "optional",
+        "scopeAuditExempt": true
+      },
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "common.json#/$defs/RuleName" }
+      }
+    },
     "SelectionGroup": {
       "type": "object",
       "description": "One named group within a selection, referenced later as '<selection ULID>#<name>'.",

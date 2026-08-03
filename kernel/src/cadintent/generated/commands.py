@@ -4,7 +4,7 @@
 from __future__ import annotations
 from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, RootModel
-from . import common, geometry as geometry_1, topology
+from . import common, geometry as geometry_1, registry as registry_1, topology
 
 
 class CadintentCoreCommandPayloads(RootModel[Any]):
@@ -69,6 +69,40 @@ class PresentationImportPayload(BaseModel):
         extra='forbid',
     )
     pack: ImportRef
+
+
+class RuleDefinePayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: common.RuleName
+    params: Annotated[
+        dict[str, Any],
+        Field(
+            description="JSON Schema for the rule's parameter object (see registry.json RuleEntry)."
+        ),
+    ]
+    result: registry_1.RuleResult
+    semantics: Annotated[
+        str,
+        Field(
+            description='Normative human-readable description of the derivation.',
+            min_length=1,
+        ),
+    ]
+    value: Annotated[
+        common.DecimalString | None,
+        Field(
+            description='The quantized constant value for constant-valued entries (e.g. a taught minimum).'
+        ),
+    ] = None
+
+
+class RuleVerifyPayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: common.RuleName
 
 
 class SelectionGroup(BaseModel):

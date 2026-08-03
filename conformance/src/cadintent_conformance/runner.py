@@ -318,4 +318,19 @@ def rebaseline_case(case_dir: Path, impl: Implementation) -> list[str]:
                 f"  old: {old_bytes!r}\n  new: {new_bytes!r}"
             )
             snapshot_path.write_bytes(new_bytes)
+
+    diff_spec = case.get("diff")
+    if diff_spec is not None:
+        base = impl.fold(_prefix(log, diff_spec["base_head"]))
+        full = impl.fold(log)
+        for path, new_bytes in (
+            (case_dir / "expected.diff.json", impl.diff(base, full)),
+            (case_dir / "expected.diff.identity.json", impl.diff(full, full)),
+        ):
+            old_bytes = path.read_bytes() if path.exists() else b""
+            if new_bytes != old_bytes:
+                notes.append(
+                    f"{path.name} changed:\n  old: {old_bytes!r}\n  new: {new_bytes!r}"
+                )
+                path.write_bytes(new_bytes)
     return notes

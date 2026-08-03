@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finding.json",
+  "title": "cadintent findings and check runs",
+  "description": "The typed finding shape shared by pack checks and render reports. Findings concern design content that did land — distinct from refusals. Every finding names what it was judged against (a rule citation with its verification status, a pack vocabulary, or a pack schema expectation) and carries the values it judged. A check that could not run reports not_run visibly — never a pass; a vacuous pass (nothing to judge) is distinguishable from a real one; consistency with an unverified rule entry is a distinct status that never reads as compliance. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "CheckStatus": {
+      "type": "string",
+      "description": "The closed per-check outcome set: 'pass' (judged, no findings, every judgement backed by verified rules or spec-level comparisons), 'findings' (one or more findings), 'unverified_consistent' (no findings, but at least one judgement rested on an unverified placeholder — visible, never compliance), 'not_run' (a required value was missing; never a silently invented default).",
+      "enum": ["pass", "findings", "unverified_consistent", "not_run"]
+    },
+    "RuleJudgement": {
+      "type": "object",
+      "description": "Judged against a rule-registry entry: the citation pins {registry, version, name}, and 'verification' carries the entry's status at judgement time.",
+      "additionalProperties": false,
+      "required": ["kind", "registry", "version", "name", "verification"],
+      "properties": {
+        "kind": { "const": "rule" },
+        "registry": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "name": { "$ref": "common.json#/$defs/RuleName" },
+        "params": {
+          "type": "object",
+          "description": "The parameter values the judgement matched against, when applicable."
+        },
+        "verification": { "$ref": "registry.json#/$defs/Verification" }
+      }
+    },
+    "VocabularyJudgement": {
+      "type": "object",
+      "description": "Judged against a versioned pack vocabulary (e.g. recommended materials). Off-list values are findings, never refusals.",
+      "additionalProperties": false,
+      "required": ["kind", "vocabulary", "version"],
+      "properties": {
+        "kind": { "const": "vocabulary" },
+        "vocabulary": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "SchemaJudgement": {
+      "type": "object",
+      "description": "Judged against a pack schema expectation or spec-level structural comparison, named in 'rule' with the tolerance applied (checks own tolerances; the kernel has none).",
+      "additionalProperties": false,
+      "required": ["kind", "pack", "version", "rule"],
+      "properties": {
+        "kind": { "const": "schema" },
+        "pack": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "rule": { "type": "string", "minLength": 1 }
+      }
+    },
+    "Judgement": {
+      "description": "What a finding or check was judged against — never implicit.",
+      "oneOf": [
+        { "$ref": "#/$defs/RuleJudgement" },
+        { "$ref": "#/$defs/VocabularyJudgement" },
+        { "$ref": "#/$defs/SchemaJudgement" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "Finding": {
+      "type": "object",
+      "description": "One finding: which check raised it, the subject objects, the values carried (both sides of any disagreement — e.g. declared and derived flow), and the rule/tolerance judged against.",
+      "additionalProperties": false,
+      "required": ["check", "subjects", "values", "judged_against"],
+      "properties": {
+        "check": { "$ref": "common.json#/$defs/RuleName" },
+        "subjects": {
+          "type": "array",
+          "description": "The design objects the finding concerns, by ULID.",
+          "items": { "$ref": "common.json#/$defs/Ulid" },
+          "minItems": 1
+        },
+        "values": {
+          "type": "object",
+          "description": "The values the finding carries — check-specific keys, always including both sides of any comparison."
+        },
+        "judged_against": { "$ref": "#/$defs/Judgement" },
+        "message": {
+          "type": "string",
+          "description": "Human prose; outside any conformance contract."
+        }
+      }
+    },
+    "CheckResult": {
+      "type": "object",
+      "description": "One check's outcome. 'evaluated' counts the subjects actually judged; 'vacuous' is true when that count is zero, so an empty pass is visibly distinguishable from a real one. A not_run result names why in 'reason'. 'consulted' lists every judgement source the check resolved (visible even when nothing fired).",
+      "additionalProperties": false,
+      "required": ["check", "status", "evaluated", "vacuous", "findings"],
+      "properties": {
+        "check": { "$ref": "common.json#/$defs/RuleName" },
+        "status": { "$ref": "#/$defs/CheckStatus" },
+        "evaluated": { "type": "integer", "minimum": 0 },
+        "vacuous": { "type": "boolean" },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/Finding" }
+        },
+        "consulted": {
+          "type": "array",
+          "description": "Every judgement source the check resolved and consulted.",
+          "items": { "$ref": "#/$defs/Judgement" }
+        },
+        "reason": {
+          "type": "string",
+          "description": "For not_run: exactly what required value was missing and where to supply it."
+        }
+      }
+    },
+    "CheckRun": {
+      "type": "object",
+      "description": "One check-runner invocation over a folded model: which spec and pack judged, at which log head, with every check's result — including visible not_run and vacuity.",
+      "additionalProperties": false,
+      "required": ["spec", "project", "head", "pack", "results"],
+      "properties": {
+        "spec": { "$ref": "common.json#/$defs/SpecVersion" },
+        "project": {
+          "type": ["string", "null"],
+          "description": "The project ULID, or null when the model is empty."
+        },
+        "head": { "type": "integer", "minimum": 0 },
+        "pack": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "version": { "type": "string", "minLength": 1 }
+          }
+        },
+        "results": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CheckResult" }
+        }
+      }
+    }
+  }
+}

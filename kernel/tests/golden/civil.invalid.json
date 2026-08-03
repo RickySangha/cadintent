@@ -1,0 +1,11 @@
+{
+  "schema": "civil.json",
+  "ref": "#/$defs/ConduitFacts",
+  "valid": false,
+  "comment": "Slope is never stored on a conduit — always derived from end inverts and plan geometry; the schema has no slot for it.",
+  "document": {
+    "shape": "circular",
+    "diameter": "0.250",
+    "slope": "0.004"
+  }
+}

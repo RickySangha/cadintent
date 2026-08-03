@@ -1,0 +1,13 @@
+{
+  "schema": "finding.json",
+  "ref": "#/$defs/CheckResult",
+  "valid": false,
+  "comment": "A check outcome is the closed four-status set; 'skip' would be silent vacuity.",
+  "document": {
+    "check": "civil.min_slope",
+    "status": "skip",
+    "evaluated": 0,
+    "vacuous": true,
+    "findings": []
+  }
+}

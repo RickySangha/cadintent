@@ -1,0 +1,14 @@
+{
+  "schema": "registry.json",
+  "ref": "#/$defs/RuleEntry",
+  "valid": false,
+  "comment": "Verification is a closed two-value enum; there is no third state.",
+  "document": {
+    "name": "civil.min_slope",
+    "params": { "type": "object" },
+    "result": { "quantity": "ratio", "quantum": "0.000000001" },
+    "semantics": "Minimum design slope.",
+    "verification": "assumed",
+    "provenance": { "author": "engineer:ricky" }
+  }
+}

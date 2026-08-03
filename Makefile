@@ -25,7 +25,7 @@ test:
 	uv run pytest -q
 
 # Run the conformance suite via its CLI (exit codes: 0 all-pass, 1 any failure
-# or empty suite, 2 any could-not-run). Not wired into CI until build #33
-# lands the diff/resume capabilities the two placeholder cases need.
+# or empty suite, 2 any could-not-run). Wired into CI since build #33 landed
+# the diff/resume capabilities.
 conformance:
 	uv run python -m cadintent_conformance

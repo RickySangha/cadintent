@@ -104,6 +104,16 @@ class PositiveDecimalString(RootModel[str]):
     ]
 
 
+class RuleName(RootModel[str]):
+    root: Annotated[
+        str,
+        Field(
+            description="A rule entry's name: namespaced lowercase dotted snake_case segments, e.g. 'civil.crown_from_pl' or 'civil.min_slope'.",
+            pattern='^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$',
+        ),
+    ]
+
+
 class Sha256Hash(RootModel[str]):
     root: Annotated[
         str,

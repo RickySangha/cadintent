@@ -6,12 +6,12 @@ from typing import Any
 
 import cadintent
 
-from .protocol import NotSupported, SubmitOutcome
+from .protocol import SubmitOutcome
 
 
 class InProcessKernel:
     spec_versions = frozenset({cadintent.SPEC_VERSION})
-    capabilities = frozenset({"submit", "fold"})
+    capabilities = frozenset({"submit", "fold", "fold_from", "diff"})
 
     def submit(
         self, log: list[dict[str, Any]], submission: dict[str, Any]
@@ -25,7 +25,7 @@ class InProcessKernel:
         return cadintent.snapshot_bytes(log)
 
     def fold_from(self, snapshot: bytes, commands: list[dict[str, Any]]) -> bytes:
-        raise NotSupported("snapshot resume lands with build issue #33")
+        return cadintent.fold_from(snapshot, commands)
 
     def diff(self, a: bytes, b: bytes) -> bytes:
-        raise NotSupported("canonical diff lands with build issue #33")
+        return cadintent.diff_bytes(a, b)

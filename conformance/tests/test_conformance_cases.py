@@ -26,12 +26,6 @@ from cadintent_conformance.runner import (
 IMPL = InProcessKernel()
 CASE_DIRS = discover()
 
-#: The two seed cases that need build issue #33 (diff, snapshot resume).
-EXPECTED_COULD_NOT_RUN = {
-    "diff/001_canonical_shape",
-    "fold/002_resume_equivalence",
-}
-
 
 def test_suite_is_not_empty() -> None:
     # Visible vacuity: an empty suite must never report green.
@@ -56,21 +50,16 @@ def test_the_ten_seed_cases_exist() -> None:
 @pytest.mark.parametrize("case_dir", CASE_DIRS, ids=case_id)
 def test_case(case_dir) -> None:
     result = run_case(case_dir, IMPL)
-    if result.status == COULD_NOT_RUN:
-        assert case_id(case_dir) in EXPECTED_COULD_NOT_RUN, (
-            f"unexpected could-not-run: {result.detail}"
-        )
-        pytest.skip(f"could-not-run: {result.detail}")
-    assert result.status == PASS, result.detail
+    assert result.status == PASS, f"{result.status}: {result.detail}"
 
 
-def test_expected_could_not_run_are_visible_not_silent() -> None:
+def test_full_seed_suite_is_green() -> None:
+    # Build #33 landed fold_from + diff: every seed case runs and passes.
     report = run_suite(IMPL)
     statuses = {r.case_id: r.status for r in report.results}
-    for cid in EXPECTED_COULD_NOT_RUN:
-        assert statuses[cid] == COULD_NOT_RUN
-    # could-not-run is never a pass: the suite exit code is 2, not 0.
-    assert report.exit_code == 2
+    assert all(status == PASS for status in statuses.values()), statuses
+    assert report.counts()[COULD_NOT_RUN] == 0
+    assert report.exit_code == 0
 
 
 def test_exit_code_contract_empty_suite_fails(tmp_path) -> None:

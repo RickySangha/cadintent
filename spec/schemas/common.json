@@ -60,6 +60,11 @@
       "description": "A strictly positive quantized decimal string (e.g. a radius).",
       "pattern": "^(0\\.[0-9]*[1-9][0-9]*|[1-9][0-9]*(\\.[0-9]+)?)$"
     },
+    "RuleName": {
+      "type": "string",
+      "description": "A rule entry's name: namespaced lowercase dotted snake_case segments, e.g. 'civil.crown_from_pl' or 'civil.min_slope'.",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$"
+    },
     "Sha256Hash": {
       "type": "string",
       "description": "A content hash: 'sha256:' followed by 64 lowercase hex digits.",

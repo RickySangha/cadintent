@@ -43,6 +43,7 @@ class Model:
     units: Fact | None = None
     crs: Fact | None = None
     imports: list[dict[str, Any]] = field(default_factory=list)
+    rules: list[dict[str, Any]] = field(default_factory=list)
     objects: dict[str, ObjectState] = field(default_factory=dict)
 
     def copy(self) -> "Model":
@@ -231,6 +232,31 @@ def apply_command(
         model.imports.append({"seq": seq, "family": family, "value": payload[key]})
         return
 
+    if kind == "rule.define":
+        entry: dict[str, Any] = {
+            "seq": seq,
+            "name": payload["name"],
+            "params": payload["params"],
+            "result": payload["result"],
+            "semantics": payload["semantics"],
+            "verification": "unverified",
+        }
+        if "value" in payload:
+            entry["value"] = payload["value"]
+        model.rules.append(entry)
+        return
+    if kind == "rule.verify":
+        for rule in reversed(model.rules):
+            if rule["name"] == payload["name"]:
+                rule["verification"] = "verified"
+                rule["verified_by"] = seq
+                return
+        raise ApplyError(
+            "unknown_reference",
+            "/name",
+            f"no project-local rule {payload['name']!r} to verify",
+        )
+
     if kind == "selection.define":
         ulid = payload["object"]
         existing = model.objects.get(ulid)
@@ -330,12 +356,16 @@ def integrity_violations(model: Model) -> list[tuple[str, str, str]]:
 # Fold
 
 
-def fold(log: list[dict[str, Any]]) -> Model:
-    """Replay a log into model state; total — raises FoldHalt, never partial."""
-    model = Model()
+def fold_into(model: Model, entries: list[dict[str, Any]]) -> Model:
+    """Replay ``entries`` (continuing at ``model.head + 1``) into ``model``.
+
+    The shared core of full replay and snapshot resume: total — raises
+    FoldHalt, never partial. The resume point counts as a batch boundary
+    (a snapshot's integrity was checked when it was folded).
+    """
     prev_batch: str | None = None
-    for index, entry in enumerate(log):
-        seq = index + 1
+    for entry in entries:
+        seq = model.head + 1
         errors = spec.schema_errors("envelope.json#/$defs/Envelope", entry)
         if errors:
             path, message = errors[0]
@@ -361,8 +391,13 @@ def fold(log: list[dict[str, Any]]) -> Model:
         except ApplyError as exc:
             raise FoldHalt(seq, exc.code, exc.message) from exc
         model.head = seq
-    _check_integrity(model, len(log))
+    _check_integrity(model, model.head)
     return model
+
+
+def fold(log: list[dict[str, Any]]) -> Model:
+    """Replay a log into model state; total — raises FoldHalt, never partial."""
+    return fold_into(Model(), log)
 
 
 def _check_integrity(model: Model, at_seq: int) -> None:

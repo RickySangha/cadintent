@@ -1,0 +1,21 @@
+{
+  "schema": "civil.json",
+  "ref": "#/$defs/ConduitFacts",
+  "valid": true,
+  "document": {
+    "invert_a": {
+      "value": "97.42",
+      "kind": "surveyed",
+      "sources": [{ "kind": "statement", "text": "survey shot 4" }]
+    },
+    "invert_b": {
+      "value": "97.10",
+      "kind": "interpolated",
+      "sources": [{ "kind": "command", "seq": 12 }]
+    },
+    "shape": "circular",
+    "diameter": "0.250",
+    "material": "pvc",
+    "flow_direction": "a_to_b"
+  }
+}

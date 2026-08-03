@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "registry.json",
+  "title": "cadintent rule registry artifacts",
+  "description": "A rule registry is a versioned, content-hashed data artifact of rule entries — closed and no-eval: no entry ever contains executable code, and a conforming implementation ships a closed evaluator keyed by entry name. Released versions are immutable; changes are new versions, deprecated entries remain resolvable forever. The artifact's content hash is sha256 over its canonical bytes (the same canonical serialization as snapshots). Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "$defs": {
+    "Verification": {
+      "type": "string",
+      "description": "The two-value verification marker on every rule entry. Only 'verified' entries can back a compliance pass; a check judged against an 'unverified' entry reports consistency with an unverified placeholder — a distinct, visible outcome that never reads as compliance.",
+      "enum": ["verified", "unverified"]
+    },
+    "RuleResult": {
+      "type": "object",
+      "description": "What a rule entry's evaluation yields: the quantity kind and the quantum its value is quantized to (per the x-cadintent-quanta registry).",
+      "additionalProperties": false,
+      "required": ["quantity", "quantum"],
+      "properties": {
+        "quantity": {
+          "type": "string",
+          "description": "The quantity kind of the result, e.g. 'elevation', 'ratio'.",
+          "minLength": 1
+        },
+        "quantum": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "RuleProvenance": {
+      "type": "object",
+      "description": "Who authored the entry and the basis citations it rests on — for taught rules, the engineer statement that birthed it. Basis is immutable; an entry's ancestry back to the engineer's words is permanent.",
+      "additionalProperties": false,
+      "required": ["author"],
+      "properties": {
+        "author": { "$ref": "common.json#/$defs/Author" },
+        "created_at": {
+          "type": "string",
+          "description": "When the entry was authored (UTC, RFC 3339)."
+        },
+        "basis": { "$ref": "basis.json#/$defs/Basis" }
+      }
+    },
+    "RuleEntry": {
+      "type": "object",
+      "description": "One rule entry: a named, parameterized derivation — never executable code. 'params' is a JSON Schema for the parameter object (additionalProperties: false — unknown keys refuse); for check-parameter entries it doubles as the applicability predicate a check matches subjects against. Constant-valued entries (e.g. municipal minima) carry the quantized value in 'value'; a check that requires a value and finds none reports a finding, never a default.",
+      "additionalProperties": false,
+      "required": ["name", "params", "result", "semantics", "verification", "provenance"],
+      "properties": {
+        "name": { "$ref": "common.json#/$defs/RuleName" },
+        "params": {
+          "type": "object",
+          "description": "JSON Schema for the rule's parameter object."
+        },
+        "result": { "$ref": "#/$defs/RuleResult" },
+        "semantics": {
+          "type": "string",
+          "description": "Normative human-readable description of the derivation.",
+          "minLength": 1
+        },
+        "value": {
+          "$ref": "common.json#/$defs/DecimalString",
+          "description": "The quantized constant value for constant-valued entries (e.g. a minimum slope). Absent for derivation rules whose values land in command payloads."
+        },
+        "verification": { "$ref": "#/$defs/Verification" },
+        "provenance": { "$ref": "#/$defs/RuleProvenance" },
+        "deprecated": {
+          "type": "boolean",
+          "description": "Retirement marker set in a later registry version; deprecated entries always remain resolvable."
+        }
+      }
+    },
+    "RegistryArtifact": {
+      "type": "object",
+      "description": "One released registry version. Immutable: any change to any entry is a new version. A project brings a registry into scope with a registry.import declaration pinning id, version, and content hash; rule citations pin the exact imported version.",
+      "additionalProperties": false,
+      "required": ["id", "version", "entries"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "entries": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RuleEntry" }
+        }
+      }
+    }
+  }
+}

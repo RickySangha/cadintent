@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "civil.json",
+  "title": "cadintent civil pack v0",
+  "description": "The civil pack's v0 schema: sanitary and storm gravity networks. Node kinds manhole / catch_basin / outfall / structure, one edge kind (conduit), and the network object. Facts land through the core object.* commands as typed attrs; only kind, geometry, and (for edges) end bindings are required at creation — missing expected facts are completeness findings, never refusals. Inverts live solely on conduit ends (a/b); structures never store them. Slope and length are never stored — always derived. Spec version 0.1.0.",
+  "x-cadintent-spec-version": "0.1.0",
+  "x-cadintent-pack": {
+    "id": "civil",
+    "version": "0.1.0",
+    "nodeKinds": [
+      "civil.manhole",
+      "civil.catch_basin",
+      "civil.outfall",
+      "civil.structure"
+    ],
+    "edgeKinds": ["civil.conduit"],
+    "networkKinds": ["civil.network"],
+    "expectedFacts": {
+      "civil.manhole": ["geometry", "attrs.rim_elevation", "attrs.sump_elevation"],
+      "civil.catch_basin": ["geometry", "attrs.rim_elevation", "attrs.sump_elevation"],
+      "civil.outfall": ["geometry"],
+      "civil.structure": ["geometry", "attrs.description"],
+      "civil.conduit": [
+        "geometry",
+        "ends",
+        "networks",
+        "attrs.invert_a",
+        "attrs.invert_b",
+        "attrs.shape",
+        "attrs.material",
+        "attrs.flow_direction"
+      ],
+      "civil.network": ["attrs.system"]
+    },
+    "shapeSizeFacts": {
+      "circular": ["attrs.diameter"],
+      "box": ["attrs.span", "attrs.rise"],
+      "arch": ["attrs.span", "attrs.rise"]
+    },
+    "vocabularies": {
+      "material": {
+        "id": "civil.material",
+        "version": "0.1.0",
+        "values": [
+          "concrete",
+          "corrugated_metal",
+          "ductile_iron",
+          "hdpe",
+          "pvc",
+          "steel",
+          "vitrified_clay"
+        ]
+      }
+    }
+  },
+  "$defs": {
+    "NetworkSystem": {
+      "type": "string",
+      "description": "The system a network serves — closed because the charter scope is exactly these two and every pack check keys off it. Combined/diversion situations are multi-membership, never a 'combined' value.",
+      "enum": ["sanitary", "storm"]
+    },
+    "FlowDirection": {
+      "type": "string",
+      "description": "The declared per-conduit flow-direction fact: from end_a to end_b, or the reverse. Never part of core topology; a pack check re-derives direction from end inverts and flags disagreement, flat, or adverse grades as findings carrying both values.",
+      "enum": ["a_to_b", "b_to_a"]
+    },
+    "ConduitShapeName": {
+      "type": "string",
+      "description": "The closed conduit shape enum — closed because shape dictates which size facts are meaningful: 'circular' expects attrs.diameter; 'box' and 'arch' expect attrs.span and attrs.rise.",
+      "enum": ["circular", "box", "arch"]
+    },
+    "CircularShape": {
+      "type": "object",
+      "description": "The assembled shape+size view of a circular conduit. Sizes are SI quantized decimal strings (a 250 mm pipe is '0.250').",
+      "additionalProperties": false,
+      "required": ["kind", "diameter"],
+      "properties": {
+        "kind": { "const": "circular" },
+        "diameter": { "$ref": "common.json#/$defs/PositiveDecimalString" }
+      }
+    },
+    "BoxShape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "span", "rise"],
+      "properties": {
+        "kind": { "const": "box" },
+        "span": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "rise": { "$ref": "common.json#/$defs/PositiveDecimalString" }
+      }
+    },
+    "ArchShape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "span", "rise"],
+      "properties": {
+        "kind": { "const": "arch" },
+        "span": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "rise": { "$ref": "common.json#/$defs/PositiveDecimalString" }
+      }
+    },
+    "ConduitShape": {
+      "description": "One conduit shape with its per-shape size fields, assembled from the conduit's shape/size attrs.",
+      "oneOf": [
+        { "$ref": "#/$defs/CircularShape" },
+        { "$ref": "#/$defs/BoxShape" },
+        { "$ref": "#/$defs/ArchShape" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "Material": {
+      "type": "string",
+      "description": "A pipe or structure material — an open non-empty string paired with the pack's versioned material vocabulary (x-cadintent-pack). The vocabulary check flags off-list values as findings, never refusals: municipalities differ, and the schema does not pretend to own that list.",
+      "minLength": 1
+    },
+    "ManholeFacts": {
+      "type": "object",
+      "description": "The optional domain facts of a manhole (all added by later commands as the design is learned; only kind and location are required at creation). rim_elevation is the lid; sump_elevation the inside bottom. Connecting-pipe inverts are per-conduit-end facts — this schema deliberately has no slot for them.",
+      "additionalProperties": false,
+      "properties": {
+        "rim_elevation": { "$ref": "geometry.json#/$defs/Elevation" },
+        "sump_elevation": { "$ref": "geometry.json#/$defs/Elevation" },
+        "diameter": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "material": { "$ref": "#/$defs/Material" }
+      }
+    },
+    "CatchBasinFacts": {
+      "type": "object",
+      "description": "Same field set as a manhole; rim_elevation is the grate. A catch basin's lead is an ordinary conduit, not a field.",
+      "additionalProperties": false,
+      "properties": {
+        "rim_elevation": { "$ref": "geometry.json#/$defs/Elevation" },
+        "sump_elevation": { "$ref": "geometry.json#/$defs/Elevation" },
+        "diameter": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "material": { "$ref": "#/$defs/Material" }
+      }
+    },
+    "OutfallFacts": {
+      "type": "object",
+      "description": "An outfall (covers headwalls). No rim — an outfall's elevations live on the conduit end that binds to it.",
+      "additionalProperties": false,
+      "properties": {
+        "material": { "$ref": "#/$defs/Material" },
+        "receiving": {
+          "type": "string",
+          "description": "Free text: what the outfall discharges to."
+        }
+      }
+    },
+    "StructureFacts": {
+      "type": "object",
+      "description": "The generic structure escape hatch: the manhole field set plus a free-text description so intent isn't lost.",
+      "additionalProperties": false,
+      "properties": {
+        "description": { "type": "string" },
+        "rim_elevation": { "$ref": "geometry.json#/$defs/Elevation" },
+        "sump_elevation": { "$ref": "geometry.json#/$defs/Elevation" },
+        "diameter": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "material": { "$ref": "#/$defs/Material" }
+      }
+    },
+    "ConduitFacts": {
+      "type": "object",
+      "description": "One edge kind for both systems — which system a conduit serves is its network membership, not its type. Inverts are per-end facts keyed a/b; slope and length are never stored (derived from end inverts and plan geometry — design-intent slope enters as basis on the command writing the inverts).",
+      "additionalProperties": false,
+      "properties": {
+        "invert_a": { "$ref": "geometry.json#/$defs/Elevation" },
+        "invert_b": { "$ref": "geometry.json#/$defs/Elevation" },
+        "shape": { "$ref": "#/$defs/ConduitShapeName" },
+        "diameter": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "span": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "rise": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "material": { "$ref": "#/$defs/Material" },
+        "flow_direction": { "$ref": "#/$defs/FlowDirection" }
+      }
+    },
+    "NetworkFacts": {
+      "type": "object",
+      "description": "A complete network carries exactly one domain fact: the system it serves. Missing at creation is a completeness finding, never a refusal.",
+      "additionalProperties": false,
+      "required": ["system"],
+      "properties": {
+        "system": { "$ref": "#/$defs/NetworkSystem" }
+      }
+    }
+  }
+}

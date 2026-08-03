@@ -1,9 +1,7 @@
 """The 12-law hypothesis invariant seed list from #20's resolution.
 
-Laws 4 (resume equivalence) and 7-9 (diff laws) need snapshot resume and the
-canonical diff document — build issue #33; they are recorded here as visible
-skips, never silently absent. Law 10's diff leg likewise waits for #33; its
-bytes/states legs run now.
+All twelve run: build issue #33 landed snapshot resume (law 4) and the
+canonical diff document (laws 7-9 and law 10's diff leg).
 """
 
 from __future__ import annotations
@@ -15,13 +13,35 @@ import pytest
 from hypothesis import given, strategies as st
 
 import cadintent
-from cadintent import Accepted, FoldHalt, Refused, fold, snapshot_bytes, submit
+from cadintent import (
+    Accepted,
+    FoldHalt,
+    Refused,
+    diff_bytes,
+    diff_doc,
+    empty_diff_bytes,
+    fold,
+    fold_from,
+    log_hash,
+    snapshot_bytes,
+    submit,
+)
 from cadintent.canonical import canonical_bytes
+from cadintent.fold import apply_command
 from cadintent.snapshot import snapshot_doc
 from cadintent.ulid import encode
 from conftest import SPEC, command, submission, units_command
 
 PROJECT = encode(7)
+
+
+def batch_boundaries(log: list[dict]) -> list[int]:
+    """Prefix lengths that end on a complete batch (snapshot-able heads)."""
+    return [
+        n
+        for n in range(1, len(log) + 1)
+        if n == len(log) or log[n]["batch"] != log[n - 1]["batch"]
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -153,9 +173,13 @@ def test_law_3_prefix_stability(log, cut) -> None:
         assert snapshot_bytes(prefix) == snapshot_bytes(copy.deepcopy(prefix))
 
 
-@pytest.mark.skip(reason="could-not-run: law 4 (resume equivalence) needs fold_from — build issue #33")
-def test_law_4_resume_equivalence() -> None:
+@given(project_logs(), st.integers(min_value=0, max_value=10))
+def test_law_4_resume_equivalence(log, cut) -> None:
     """fold(snapshot@n, n+1..m) == full replay of 1..m, byte-identical."""
+    boundaries = batch_boundaries(log)
+    n = boundaries[cut % len(boundaries)]
+    prefix_snapshot = snapshot_bytes(log[:n])
+    assert fold_from(prefix_snapshot, log[n:]) == snapshot_bytes(log)
 
 
 @given(project_logs())
@@ -192,27 +216,101 @@ def test_law_6_batch_atomicity(log) -> None:
     assert encode(999_999) not in json.loads(after)["objects"]
 
 
-@pytest.mark.skip(reason="could-not-run: law 7 (diff identity) needs the canonical diff — build issue #33")
-def test_law_7_diff_identity() -> None:
-    """diff(S, S) is the canonical empty document."""
+@given(project_logs())
+def test_law_7_diff_identity(log) -> None:
+    """diff(S, S) is the canonical empty document — one form, independent of S."""
+    snapshot = snapshot_bytes(log)
+    assert diff_bytes(snapshot, snapshot) == empty_diff_bytes()
 
 
-@pytest.mark.skip(reason="could-not-run: law 8 (diff completeness) needs the canonical diff — build issue #33")
-def test_law_8_diff_completeness() -> None:
+@given(project_logs(), st.integers(min_value=0, max_value=10))
+def test_law_8_diff_completeness(log, cut) -> None:
     """diff(fold(1..n), fold(1..m)) mentions exactly the touched objects."""
+    boundaries = batch_boundaries(log)
+    n = boundaries[cut % len(boundaries)]
+    base, full = snapshot_bytes(log[:n]), snapshot_bytes(log)
+    d = json.loads(diff_bytes(base, full))
+    mentioned = set(d["created"]) | set(d["modified"]) | set(d["removed"])
+
+    model = fold(log[:n])
+    touched: dict[str, set[str]] = {}
+    for entry in log[n:]:
+        apply_command(model, entry["seq"], entry["kind"], entry["payload"], touched)
+        model.head = entry["seq"]
+    # Every mentioned object was touched; every touched object either shows in
+    # the diff or ended byte-identical (e.g. created then removed in n+1..m).
+    assert mentioned <= set(touched)
+    base_objects = json.loads(base)["objects"]
+    full_objects = json.loads(full)["objects"]
+    for ulid in set(touched) - mentioned:
+        assert base_objects.get(ulid) == full_objects.get(ulid)
 
 
-@pytest.mark.skip(reason="could-not-run: law 9 (diff invertibility) needs the canonical diff — build issue #33")
-def test_law_9_diff_invertibility() -> None:
+def _apply_diff(a_doc: dict, d: dict) -> dict:
+    doc = copy.deepcopy(a_doc)
+    for key, change in d["meta"].items():
+        doc[key] = change["after"]
+    for key, change in d["declarations"].items():
+        doc["declarations"][key] = change["after"]
+    for ulid in d["removed"]:
+        del doc["objects"][ulid]
+    for ulid, entry in d["created"].items():
+        doc["objects"][ulid] = entry
+    for ulid, paths in d["modified"].items():
+        entry = doc["objects"][ulid]
+        for path, change in paths.items():
+            container, key = (
+                (entry, "derivation") if path == "derivation" else (entry["facts"], path)
+            )
+            if change["after"] is None:
+                container.pop(key, None)
+            else:
+                container[key] = change["after"]
+    return doc
+
+
+@given(project_logs(), st.integers(min_value=0, max_value=10))
+def test_law_9_diff_invertibility(log, cut) -> None:
     """diff(A, B) + A determines B; diff(B, A) is the mirror."""
+    boundaries = batch_boundaries(log)
+    n = boundaries[cut % len(boundaries)]
+    a_bytes, b_bytes = snapshot_bytes(log[:n]), snapshot_bytes(log)
+    a_doc, b_doc = json.loads(a_bytes), json.loads(b_bytes)
+    d_ab, d_ba = diff_doc(a_doc, b_doc), diff_doc(b_doc, a_doc)
+
+    # diff(A, B) + A determines B.
+    assert canonical_bytes(_apply_diff(a_doc, d_ab)) == b_bytes
+
+    # diff(B, A) is the mirror: created<->removed, before<->after swapped.
+    assert d_ba["created"] == d_ab["removed"]
+    assert d_ba["removed"] == d_ab["created"]
+
+    def mirror(section: dict) -> dict:
+        return {
+            key: {**value, "before": value["after"], "after": value["before"]}
+            for key, value in section.items()
+        }
+
+    assert d_ba["meta"] == mirror(d_ab["meta"])
+    assert d_ba["declarations"] == mirror(d_ab["declarations"])
+    assert d_ba["modified"] == {
+        ulid: {
+            path: {**change, "before": change["after"], "after": change["before"]}
+            for path, change in paths.items()
+        }
+        for ulid, paths in d_ab["modified"].items()
+    }
 
 
 @given(project_logs(), project_logs())
 def test_law_10_equality_coherence(log_a, log_b) -> None:
-    """Bytes equal <=> states equal (the diff-empty leg waits on #33)."""
+    """Bytes equal <=> diff empty <=> states equal."""
     bytes_a, bytes_b = snapshot_bytes(log_a), snapshot_bytes(log_b)
-    states_equal = snapshot_doc(fold(log_a), log_a) == snapshot_doc(fold(log_b), log_b)
-    assert (bytes_a == bytes_b) == states_equal
+    states_equal = snapshot_doc(fold(log_a), log_hash(log_a)) == snapshot_doc(
+        fold(log_b), log_hash(log_b)
+    )
+    diff_empty = diff_bytes(bytes_a, bytes_b) == empty_diff_bytes()
+    assert (bytes_a == bytes_b) == states_equal == diff_empty
 
 
 @given(project_logs())

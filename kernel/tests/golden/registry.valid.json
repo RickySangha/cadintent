@@ -1,0 +1,32 @@
+{
+  "schema": "registry.json",
+  "ref": "#/$defs/RegistryArtifact",
+  "valid": true,
+  "document": {
+    "id": "metro-gravity-rules",
+    "version": "1.2.0",
+    "entries": [
+      {
+        "name": "civil.min_slope",
+        "params": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "material": { "const": "pvc" }
+          }
+        },
+        "result": { "quantity": "ratio", "quantum": "0.000000001" },
+        "semantics": "Minimum design slope for PVC gravity mains.",
+        "value": "0.004",
+        "verification": "verified",
+        "provenance": {
+          "author": "engineer:ricky",
+          "created_at": "2026-08-02T00:00:00Z",
+          "basis": [
+            { "kind": "statement", "text": "Metro standard 4.2.1: PVC mains at 0.40% minimum." }
+          ]
+        }
+      }
+    ]
+  }
+}

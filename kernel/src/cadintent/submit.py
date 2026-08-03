@@ -352,6 +352,10 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
     minted: set[str] = set()
     minted_selections: dict[str, dict[str, Any]] = {}
     imports_in_submission: list[tuple[str, str, str]] = []
+    #: project-local rule versions available so far: (name, seq-as-string)
+    project_rules: set[tuple[str, str]] = {
+        (rule["name"], str(rule["seq"])) for rule in model.rules
+    }
 
     def exists(candidate: str) -> bool:
         return candidate in model.objects or candidate in minted
@@ -443,6 +447,8 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
                 minted.add(new_ulid)
                 if kind == "selection.define":
                     minted_selections[new_ulid] = payload["criteria"]
+        if kind == "rule.define":
+            project_rules.add((payload["name"], str(model.head + 1 + i)))
         if kind in ("registry.import", "presentation.import"):
             key = "registry" if kind == "registry.import" else "pack"
             family = "registry" if kind == "registry.import" else "presentation"
@@ -459,6 +465,20 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
                             i,
                             f"/basis/{bi}/seq",
                             f"basis cites seq {cited}, not an earlier log entry",
+                        )
+                    )
+            elif citation["kind"] == "rule" and citation["registry"] == "project":
+                # Project-local entries are pinned by the log itself (#28):
+                # version is the seq of the rule.define command.
+                if (citation["name"], citation["version"]) not in project_rules:
+                    errors.append(
+                        _err(
+                            "unknown_reference",
+                            i,
+                            f"/basis/{bi}",
+                            f"rule cites project-local entry "
+                            f"{citation['name']!r} at seq {citation['version']}"
+                            ", which no rule.define command established",
                         )
                     )
             elif citation["kind"] == "rule":
