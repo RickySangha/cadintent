@@ -1,6 +1,6 @@
 """cadintent kernel: validate / fold / diff over design-intent command streams."""
 
-from .canonical import canonical_bytes, extend_log_hash, log_hash
+from .canonical import canonical_bytes, extend_log_hash, log_bytes, log_hash, parse_log
 from .checks import run_checks
 from .diff import diff_bytes, diff_doc, empty_diff_bytes
 from .fold import ApplyError, FoldHalt, Model, fold
@@ -37,7 +37,9 @@ __all__ = [
     "extend_log_hash",
     "fold",
     "fold_from",
+    "log_bytes",
     "log_hash",
+    "parse_log",
     "model_from_doc",
     "run_checks",
     "snapshot_bytes",

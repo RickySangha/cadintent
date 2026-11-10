@@ -1,0 +1,73 @@
+{
+  "name": "005_author_roles",
+  "spec": "0.1.0",
+  "notes": "An agent cannot cite a base and an edit needs a basis. Both are reported at once.",
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "refuse",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 1,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "text": "X"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}

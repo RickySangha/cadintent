@@ -49,6 +49,23 @@ class RegionScopeTerm(BaseModel):
     region: geometry.Region
 
 
+class BaseScopeTerm(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['base']
+    content_hash: common.Sha256Hash
+
+
+class BaseEntityScopeTerm(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['base_entity']
+    content_hash: common.Sha256Hash
+    entity: Annotated[str, Field(min_length=1)]
+
+
 class ProjectScopeTerm(BaseModel):
     model_config = ConfigDict(
         extra='forbid',
@@ -62,6 +79,8 @@ class ScopeTerm(
         | SelectionScopeTerm
         | NetworkScopeTerm
         | RegionScopeTerm
+        | BaseScopeTerm
+        | BaseEntityScopeTerm
         | ProjectScopeTerm
     ]
 ):
@@ -70,6 +89,8 @@ class ScopeTerm(
         | SelectionScopeTerm
         | NetworkScopeTerm
         | RegionScopeTerm
+        | BaseScopeTerm
+        | BaseEntityScopeTerm
         | ProjectScopeTerm,
         Field(
             description='One typed scope term. A touched object is in scope if it matches any term.',

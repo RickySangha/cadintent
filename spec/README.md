@@ -10,6 +10,15 @@ The specification text and schemas in this directory are licensed under
 [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/). Code elsewhere in this
 repository is licensed under Apache-2.0 (see the root [LICENSE](../LICENSE)).
 
+## Project layout
+
+A project's log is one file, `ir/design.log.jsonl`: one canonical command per
+line, UTF-8, each line ending in a newline. An empty log is an empty file.
+Commit it. The log is append-only and has one writer at a time.
+
+A snapshot is a cache of the fold. Do not commit one: it can only disagree with
+the log it came from. Where a tool keeps its cache is up to the tool.
+
 ## Authoring constraints
 
 Imposed by the codegen toolchain decision

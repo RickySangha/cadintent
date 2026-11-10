@@ -22,7 +22,13 @@ SCHEMAS_DIR = Path(__file__).resolve().parents[3] / "spec" / "schemas"
 
 #: Command kinds that are project declarations (#29): not design content.
 DECLARATION_KINDS = frozenset(
-    {"project.units", "project.crs", "registry.import", "presentation.import"}
+    {
+        "project.units",
+        "project.crs",
+        "registry.import",
+        "presentation.import",
+        "base.cite",
+    }
 )
 
 

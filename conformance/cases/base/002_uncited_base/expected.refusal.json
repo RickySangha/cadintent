@@ -1,0 +1,10 @@
+{
+  "submission": 1,
+  "errors": [
+    {
+      "code": "unknown_reference",
+      "command": 0,
+      "path": "/payload/target/content_hash"
+    }
+  ]
+}

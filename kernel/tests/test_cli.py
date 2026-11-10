@@ -47,15 +47,15 @@ def accepted_log() -> list[dict[str, Any]]:
 
 @pytest.fixture()
 def log_file(tmp_path):
-    path = tmp_path / "log.json"
-    path.write_bytes(canonical.canonical_bytes(accepted_log()))
+    path = tmp_path / "log.jsonl"
+    path.write_bytes(canonical.log_bytes(accepted_log()))
     return path
 
 
 @pytest.fixture()
 def snap_file(tmp_path, log_file):
     path = tmp_path / "snap.json"
-    path.write_bytes(snapshot_bytes(json.loads(log_file.read_bytes())))
+    path.write_bytes(snapshot_bytes(canonical.parse_log(log_file.read_bytes())))
     return path
 
 
@@ -156,7 +156,7 @@ def test_two_stdin_dashes_is_64():
 
 
 def test_submit_accepts_and_extends_log_atomically(tmp_path, log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     sub = write_submission(
         tmp_path, submission(PROJECT, len(entries), [create_node(ulid(2), "5.000")])
     )
@@ -166,7 +166,7 @@ def test_submit_accepts_and_extends_log_atomically(tmp_path, log_file):
     assert receipt["accepted"] == 1
     assert receipt["head"] == len(entries) + 1
     assert receipt["project"] == PROJECT
-    new_entries = json.loads(log_file.read_bytes())
+    new_entries = canonical.parse_log(log_file.read_bytes())
     assert len(new_entries) == len(entries) + 1
     assert new_entries[-1]["seq"] == len(entries) + 1
     assert new_entries[-1]["batch"] == receipt["batch"]
@@ -197,7 +197,7 @@ def test_submit_refusal_quiet_still_exits_2(tmp_path, log_file):
 
 
 def test_submit_submission_from_stdin(tmp_path, log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     raw = json.dumps(
         submission(PROJECT, len(entries), [create_node(ulid(4), "9.000")])
     ).encode()
@@ -218,7 +218,7 @@ def test_submit_log_never_stdin(tmp_path):
 
 
 def test_fold_emits_canonical_snapshot(log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     proc = run_cli("fold", str(log_file))
     assert proc.returncode == 0
     assert proc.stdout == snapshot_bytes(entries)
@@ -229,14 +229,23 @@ def test_fold_log_from_stdin(log_file):
     raw = log_file.read_bytes()
     proc = run_cli("fold", "-", stdin=raw)
     assert proc.returncode == 0
-    assert proc.stdout == snapshot_bytes(json.loads(raw))
+    assert proc.stdout == snapshot_bytes(canonical.parse_log(raw))
+
+
+@pytest.mark.parametrize("raw", [b"not json\n", b'[{"seq":1}]\n'])
+def test_malformed_log_file_is_64(tmp_path, raw):
+    bad = tmp_path / "bad.jsonl"
+    bad.write_bytes(raw)
+    proc = run_cli("fold", str(bad))
+    assert proc.returncode == 64
+    assert b"line 1" in proc.stderr
 
 
 def test_fold_halt_is_3(tmp_path, log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     entries[-1]["kind"] = "bogus.kind"  # tampered log: fold halts totally
-    tampered = tmp_path / "tampered.json"
-    tampered.write_bytes(canonical.canonical_bytes(entries))
+    tampered = tmp_path / "tampered.jsonl"
+    tampered.write_bytes(canonical.log_bytes(entries))
     proc = run_cli("fold", str(tampered))
     assert proc.returncode == 3
     error = stdout_doc(proc)["error"]
@@ -245,7 +254,7 @@ def test_fold_halt_is_3(tmp_path, log_file):
 
 
 def test_fold_from_snapshot_byte_equals_full_replay(tmp_path, log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     prefix_snap = tmp_path / "prefix.json"
     prefix_snap.write_bytes(snapshot_bytes(entries[:1]))
     proc = run_cli("fold", str(log_file), "--from-snapshot", str(prefix_snap))
@@ -254,7 +263,7 @@ def test_fold_from_snapshot_byte_equals_full_replay(tmp_path, log_file):
 
 
 def test_fold_from_stale_snapshot_is_3_with_reindex_hint(tmp_path, log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     doc = json.loads(snapshot_bytes(entries[:1]))
     doc["log_hash"] = "sha256:" + "0" * 64
     stale = tmp_path / "stale.json"
@@ -270,7 +279,7 @@ def test_fold_from_stale_snapshot_is_3_with_reindex_hint(tmp_path, log_file):
 
 
 def test_diff_two_revisions(tmp_path, log_file):
-    entries = json.loads(log_file.read_bytes())
+    entries = canonical.parse_log(log_file.read_bytes())
     snap_a = tmp_path / "a.json"
     snap_b = tmp_path / "b.json"
     snap_a.write_bytes(snapshot_bytes(entries[:1]))
@@ -370,8 +379,8 @@ def test_render_without_presentation_import_is_3(snap_file, tmp_path):
 
 
 def test_end_to_end_pipeline(tmp_path):
-    log = tmp_path / "log.json"
-    log.write_bytes(canonical.canonical_bytes([]))
+    log = tmp_path / "log.jsonl"
+    log.write_bytes(canonical.log_bytes([]))
 
     # validate
     sub1 = write_submission(

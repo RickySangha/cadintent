@@ -1,0 +1,15 @@
+{
+  "submission": 1,
+  "errors": [
+    {
+      "code": "author_role_violation",
+      "command": 0,
+      "path": "/author"
+    },
+    {
+      "code": "missing_basis",
+      "command": 1,
+      "path": "/basis"
+    }
+  ]
+}

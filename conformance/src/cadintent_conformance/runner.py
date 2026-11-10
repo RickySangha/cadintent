@@ -173,7 +173,11 @@ def _evaluate(
                     f"submission {index}: refusal was not atomic — the foldable "
                     "state changed",
                 )
-            if expected_refusal is not None and expected_refusal["submission"] == index:
+            if expected_refusal is None:
+                return CaseResult(
+                    cid, FAIL, "case expects a refusal but has no expected.refusal.json"
+                )
+            if expected_refusal["submission"] == index:
                 detail = compare_refusal(expected_refusal["errors"], outcome.refusal)
                 if detail is not None:
                     return CaseResult(cid, FAIL, f"submission {index}: {detail}")

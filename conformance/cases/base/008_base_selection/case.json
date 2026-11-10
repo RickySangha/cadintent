@@ -1,0 +1,146 @@
+{
+  "name": "008_base_selection",
+  "spec": "0.1.0",
+  "notes": "A selection over a base records its predicates and the entities they matched, sorted. An edit through a group reaches only that group, resolved from the recorded list. The fold never opens the base.",
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 2,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "selection.define",
+            "payload": {
+              "object": "0SE1ECT0N00000000000000000",
+              "criteria": {
+                "kind": "base",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "where": {
+                  "layers": [
+                    "LAYER-TWO",
+                    "LAYER-ONE"
+                  ],
+                  "types": [
+                    "INSERT"
+                  ],
+                  "classify": {
+                    "offset_to": "F9",
+                    "bands": [
+                      {
+                        "name": "near",
+                        "max_offset": "0.15"
+                      },
+                      {
+                        "name": "far"
+                      }
+                    ]
+                  }
+                },
+                "entities": [
+                  "B2",
+                  "A1",
+                  "C3"
+                ],
+                "groups": [
+                  {
+                    "name": "far",
+                    "entities": [
+                      "C3"
+                    ]
+                  },
+                  {
+                    "name": "near",
+                    "entities": [
+                      "B2",
+                      "A1"
+                    ]
+                  }
+                ]
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 3,
+        "scope": [
+          {
+            "kind": "selection",
+            "selection": "0SE1ECT0N00000000000000000#near"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "selection",
+                "selection": "0SE1ECT0N00000000000000000#near"
+              },
+              "text": "NEAR"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}

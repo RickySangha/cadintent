@@ -15,7 +15,12 @@ One canonical JSON document (serialized by :mod:`cadintent.canonical`):
   ("type", "geometry", "ends", "networks", "criteria", "attrs.<name>") to
   {seq, value}; selection objects additionally carry a ``derivation`` record:
   {seq, objects, groups} — membership resolved at fold (existing criteria
-  members, sorted).
+  members, sorted);
+- ``base`` — present only once a base is cited: ``citations`` (list in log
+  order, each {seq, name, content_hash, format}) and ``entities`` (content
+  hash -> native reference -> ``facts``, the edits made to that entity: fact
+  paths "points", "text", "transform", "deleted", "tags.<name>"). A base
+  selection's ``derivation`` is {seq, entities, groups}, as recorded.
 
 Resume (#20 law 4): :func:`fold_from` continues a fold from a snapshot and
 MUST byte-equal full replay. A stale snapshot refuses rather than serves —
@@ -50,6 +55,12 @@ def _fact(fact: Fact) -> dict[str, Any]:
 
 def _derivation(model: Model, criteria_fact: Fact) -> dict[str, Any]:
     criteria = criteria_fact.value
+    if criteria["kind"] == "base":
+        return {
+            "seq": criteria_fact.seq,
+            "entities": criteria["entities"],
+            "groups": {g["name"]: g["entities"] for g in criteria.get("groups", [])},
+        }
     return {
         "seq": criteria_fact.seq,
         "objects": sorted(m for m in criteria["objects"] if m in model.objects),
@@ -69,7 +80,7 @@ def snapshot_doc(model: Model, log_hash: str) -> dict[str, Any]:
         if obj.is_selection:
             entry["derivation"] = _derivation(model, obj.facts["criteria"])
         objects[ulid] = entry
-    return {
+    doc: dict[str, Any] = {
         "spec": spec.SPEC_VERSION,
         "project": model.project,
         "head": model.head,
@@ -82,6 +93,18 @@ def snapshot_doc(model: Model, log_hash: str) -> dict[str, Any]:
         },
         "objects": objects,
     }
+    if model.base_citations:
+        doc["base"] = {
+            "citations": model.base_citations,
+            "entities": {
+                content_hash: {
+                    entity: {"facts": {path: _fact(f) for path, f in state.facts.items()}}
+                    for entity, state in entities.items()
+                }
+                for content_hash, entities in model.base_entities.items()
+            },
+        }
+    return doc
 
 
 def snapshot_bytes(log: list[dict[str, Any]]) -> bytes:
@@ -111,6 +134,17 @@ def model_from_doc(doc: dict[str, Any]) -> Model:
             for path, fact in entry["facts"].items()
         }
         model.objects[ulid] = obj
+    base = doc.get("base")
+    if base is not None:
+        model.base_citations = [dict(citation) for citation in base["citations"]]
+        for content_hash, entities in base["entities"].items():
+            for entity, entry in entities.items():
+                state = ObjectState()
+                state.facts = {
+                    path: Fact(fact["seq"], fact["value"])
+                    for path, fact in entry["facts"].items()
+                }
+                model.base_entities.setdefault(content_hash, {})[entity] = state
     return model
 
 

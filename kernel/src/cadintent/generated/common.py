@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 from typing import Annotated, Any
-from pydantic import Field, RootModel
+from pydantic import BaseModel, ConfigDict, Field, RootModel
 from enum import StrEnum
 
 
@@ -120,5 +120,19 @@ class Sha256Hash(RootModel[str]):
         Field(
             description="A content hash: 'sha256:' followed by 64 lowercase hex digits.",
             pattern='^sha256:[0-9a-f]{64}$',
+        ),
+    ]
+
+
+class BaseEntityRef(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    content_hash: Sha256Hash
+    entity: Annotated[
+        str,
+        Field(
+            description='The native entity reference within the hashed base, e.g. a DXF handle.',
+            min_length=1,
         ),
     ]

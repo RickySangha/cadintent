@@ -45,6 +45,27 @@
         "region": { "$ref": "geometry.json#/$defs/Region" }
       }
     },
+    "BaseScopeTerm": {
+      "type": "object",
+      "description": "Every entity of one cited base, and every clone made from it. The base must be cited at the declared head or by this submission.",
+      "additionalProperties": false,
+      "required": ["kind", "content_hash"],
+      "properties": {
+        "kind": { "const": "base" },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" }
+      }
+    },
+    "BaseEntityScopeTerm": {
+      "type": "object",
+      "description": "One entity of a cited base. The kernel cannot tell whether a region covers a base entity, because it never opens the base, so region terms do not cover base entities.",
+      "additionalProperties": false,
+      "required": ["kind", "content_hash", "entity"],
+      "properties": {
+        "kind": { "const": "base_entity" },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" },
+        "entity": { "type": "string", "minLength": 1 }
+      }
+    },
     "ProjectScopeTerm": {
       "type": "object",
       "description": "The explicit whole-project term. Deliberate and visible in the record — totality costs a keystroke.",
@@ -61,6 +82,8 @@
         { "$ref": "#/$defs/SelectionScopeTerm" },
         { "$ref": "#/$defs/NetworkScopeTerm" },
         { "$ref": "#/$defs/RegionScopeTerm" },
+        { "$ref": "#/$defs/BaseScopeTerm" },
+        { "$ref": "#/$defs/BaseEntityScopeTerm" },
         { "$ref": "#/$defs/ProjectScopeTerm" }
       ],
       "discriminator": { "propertyName": "kind" }

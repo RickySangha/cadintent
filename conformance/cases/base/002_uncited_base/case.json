@@ -1,0 +1,78 @@
+{
+  "name": "002_uncited_base",
+  "spec": "0.1.0",
+  "notes": "An edit naming a base no citation established refuses in full, and the log is untouched.",
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "refuse",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 2,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "entity": "A1"
+              },
+              "text": "X"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}
