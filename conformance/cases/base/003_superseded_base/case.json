@@ -1,0 +1,136 @@
+{
+  "name": "003_superseded_base",
+  "spec": "0.1.0",
+  "notes": "Citing a drawing again with a new hash supersedes the earlier base. An edit bound to the earlier base refuses, and one bound to the new base lands.",
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 2,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "refuse",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 3,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "text": "STALE"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 3,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "entity": "A1"
+              },
+              "text": "CURRENT"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}

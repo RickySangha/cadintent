@@ -1,0 +1,10 @@
+{
+  "submission": 1,
+  "errors": [
+    {
+      "code": "scope_violation",
+      "command": null,
+      "path": "/scope"
+    }
+  ]
+}

@@ -134,12 +134,13 @@ def _read_json(path: str, what: str, stdin: _Stdin) -> Any:
 
 
 def _read_log(path: str, stdin: _Stdin) -> list[dict[str, Any]]:
-    doc = _read_json(path, "log", stdin)
-    if not isinstance(doc, list):
+    raw = _read_bytes(path, "log", stdin)
+    try:
+        return canonical.parse_log(raw)
+    except ValueError as exc:
         raise click_exc.UsageError(
-            f"log {path!r} must be a JSON array of envelope-complete commands"
+            f"log {path!r} must hold one envelope-complete command per line: {exc}"
         )
-    return doc
 
 
 def _load_snapshot(path: str, what: str, stdin: _Stdin) -> tuple[bytes, dict[str, Any]]:
@@ -276,7 +277,7 @@ def submit(
         _render_errors(result.refusal["errors"], quiet, noun="refusal error")
         _say(quiet, "refused: nothing landed; the log is byte-identical")
         raise typer.Exit(EXIT_REFUSAL)
-    _atomic_write(log, canonical.canonical_bytes(result.log))
+    _atomic_write(log, canonical.log_bytes(result.log))
     receipt = {
         "spec": SPEC_VERSION,
         "project": doc.get("project") if isinstance(doc, dict) else None,

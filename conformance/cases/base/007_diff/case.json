@@ -1,0 +1,173 @@
+{
+  "name": "007_diff",
+  "spec": "0.1.0",
+  "notes": "A diff across a round: a citation unchanged, one entity created, one modified, one fully reverted.",
+  "requires": [
+    "diff"
+  ],
+  "diff": {
+    "base_head": 4
+  },
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 2,
+        "scope": [
+          {
+            "kind": "base",
+            "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "B2"
+              },
+              "text": "FIRST"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.delete",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "C3"
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 4,
+        "scope": [
+          {
+            "kind": "base",
+            "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "B2"
+              },
+              "text": "SECOND"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.revert",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "C3"
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "D4"
+              },
+              "text": "NEW"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ]
+}

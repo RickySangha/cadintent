@@ -62,6 +62,12 @@ class RefusalError(BaseModel):
             description='The design-object ULIDs this error names, when the code names objects: for dangling_reference the objects still referring to the removal target (inside the conformance contract, compared as a set); for scope_violation the out-of-scope object. Omitted for codes that name no objects.'
         ),
     ] = None
+    entities: Annotated[
+        list[common.BaseEntityRef] | None,
+        Field(
+            description='The base entities this error names, when the code names base entities: for scope_violation the out-of-scope entities. Outside the conformance contract, like messages. Omitted otherwise.'
+        ),
+    ] = None
 
 
 class Refusal(BaseModel):

@@ -26,7 +26,7 @@ concerns design content that *did* land.
 A first-class object defined by criteria ("all inserts on layer X in this
 region, classified by offset to that line"), created by a command and carrying
 its own ULID. Later commands reference the selection or one of its named
-groups (`<ULID>#on_line`); membership is resolved at replay and recorded in
+groups (`<ULID>#on_line`); membership over design objects is resolved at replay and recorded in
 the derivation record.
 
 ## Submission (batch)
@@ -92,6 +92,46 @@ The materialized model state at a given log entry, as one canonical document:
 every object's facts, the log entry that wrote each fact, and the identity
 (content hash) of the log it was folded from. A cache of the fold, never an
 authority — a snapshot that doesn't match its log refuses rather than serves.
+
+## Log file
+
+A log stored on disk: one canonical command per line, append-only. Git can show
+what an append added. Two appends still cannot be merged line by line, because
+entry numbers, the declared head and the hash chain each allow one writer at a
+time.
+
+## Base
+
+An immutable file a design is drawn over: a survey, another consultant's
+drawing, the engineer's own drafting. The kernel never opens it. It knows a base
+only by content hash and by the drawing name it was cited under.
+
+## Base citation
+
+The command that names a base. Citing a drawing again with a new hash supersedes
+the earlier base, and edits then bind to the new one. An agent cannot cite a
+base, so it cannot choose what it is drawing over.
+
+## Base edit
+
+A command that changes how one entity of a cited base is compiled: its points,
+text, block tags or transform, or leaving it out. The base file never changes.
+Each field keeps its latest value, so the current edits are a description of
+the result rather than a list of steps. A base edit is addressed by content hash
+plus native reference, the pair an evidence citation already binds.
+
+## Base selection
+
+A selection over the entities of a cited base, by layer, block, type, region or
+offset to a line. The author resolves it when writing the command, and the
+command records both the predicates and the entities matched. Replay uses the
+recorded list, because the fold cannot open the base.
+
+## Clone
+
+A new design object made from a base entity, keeping its type and styling. Unlike
+a base edit, a clone is ours: it has a ULID, and it has no base state to go back
+to.
 
 ## Diff
 

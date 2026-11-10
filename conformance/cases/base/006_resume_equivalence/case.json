@@ -1,0 +1,319 @@
+{
+  "name": "006_resume_equivalence",
+  "spec": "0.1.0",
+  "notes": "Resuming a fold from a snapshot taken after the first edit round byte-equals full replay, base edits included.",
+  "requires": [
+    "fold_from"
+  ],
+  "resume": {
+    "prefix_head": 9
+  },
+  "setup": [],
+  "submissions": [
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 0,
+        "scope": [
+          {
+            "kind": "project"
+          }
+        ],
+        "commands": [
+          {
+            "author": "engineer:ricky",
+            "kind": "project.units",
+            "payload": {
+              "system": {
+                "kind": "metric"
+              }
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "engineer:ricky",
+            "kind": "base.cite",
+            "payload": {
+              "name": "site",
+              "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "format": "dxf"
+            },
+            "basis": [],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 2,
+        "scope": [
+          {
+            "kind": "base",
+            "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_points",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "vertices": [
+                {
+                  "point": {
+                    "x": "1.23456789",
+                    "y": "2"
+                  },
+                  "bulge": "0.5"
+                },
+                {
+                  "point": {
+                    "x": "3",
+                    "y": "4"
+                  }
+                }
+              ]
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_tags",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "tags": {
+                "ELEV": "10.00",
+                "NO": "4"
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.transform",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "transform": {
+                "translate": {
+                  "x": "1",
+                  "y": "0"
+                },
+                "rotate": "90",
+                "scale": "2",
+                "origin": {
+                  "x": "5",
+                  "y": "5"
+                }
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "B2"
+              },
+              "text": "FIRST"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.delete",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "C3"
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.clone",
+            "payload": {
+              "object": "0C10NE00000000000000000000",
+              "source": {
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "text": "COPY"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "clone",
+                "object": "0C10NE00000000000000000000"
+              },
+              "text": "COPY EDITED"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    },
+    {
+      "expect": "accept",
+      "submission": {
+        "project": "0PRJ0000000000000000000000",
+        "head": 9,
+        "scope": [
+          {
+            "kind": "base",
+            "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        ],
+        "commands": [
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_text",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "B2"
+              },
+              "text": "SECOND"
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.set_tags",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "tags": {
+                "ELEV": "11.00"
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.revert",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "C3"
+              }
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          },
+          {
+            "author": "agent:drafter",
+            "kind": "base.revert",
+            "payload": {
+              "target": {
+                "kind": "entity",
+                "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "entity": "A1"
+              },
+              "fields": [
+                "transform"
+              ]
+            },
+            "basis": [
+              {
+                "kind": "statement",
+                "text": "invented reason for a conformance case"
+              }
+            ],
+            "spec": "0.1.0"
+          }
+        ]
+      }
+    }
+  ],
+  "expects_snapshot": true
+}

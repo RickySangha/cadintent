@@ -47,6 +47,34 @@ def canonical_bytes(document: Any) -> bytes:
     ).encode("utf-8")
 
 
+def log_bytes(log: list[dict[str, Any]]) -> bytes:
+    """The log file format: one canonical entry per line, append-only.
+
+    An empty log is an empty file. One entry per line lets line-oriented tools
+    such as git show what an append added. It does not make two appends
+    mergeable: ``seq``, the declared head and the hash chain each allow one
+    writer at a time.
+    """
+    return b"".join(canonical_bytes(entry) for entry in log)
+
+
+def parse_log(raw: bytes) -> list[dict[str, Any]]:
+    """Parse the log file format. Raises ValueError naming the bad line."""
+    entries: list[dict[str, Any]] = []
+    lines = raw.split(b"\n")
+    if lines[-1] == b"":
+        lines.pop()
+    for number, line in enumerate(lines, start=1):
+        try:
+            entry = json.loads(line)
+        except (ValueError, UnicodeDecodeError) as exc:
+            raise ValueError(f"line {number} is not parseable JSON: {exc}") from exc
+        if not isinstance(entry, dict):
+            raise ValueError(f"line {number} is not one envelope-complete command")
+        entries.append(entry)
+    return entries
+
+
 def _entry_bytes(entry: dict[str, Any]) -> bytes:
     return canonical_bytes(
         {k: v for k, v in entry.items() if k not in _EXCLUDED_FROM_HASH}

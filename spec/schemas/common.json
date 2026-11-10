@@ -69,6 +69,20 @@
       "type": "string",
       "description": "A content hash: 'sha256:' followed by 64 lowercase hex digits.",
       "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "BaseEntityRef": {
+      "type": "object",
+      "description": "One entity in a cited base: the base's content hash and the entity's native reference, always bound together. A bare native handle is never an address. The native reference is opaque to the kernel.",
+      "additionalProperties": false,
+      "required": ["content_hash", "entity"],
+      "properties": {
+        "content_hash": { "$ref": "#/$defs/Sha256Hash" },
+        "entity": {
+          "type": "string",
+          "description": "The native entity reference within the hashed base, e.g. a DXF handle.",
+          "minLength": 1
+        }
+      }
     }
   }
 }

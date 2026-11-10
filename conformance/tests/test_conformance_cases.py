@@ -32,7 +32,7 @@ def test_suite_is_not_empty() -> None:
     assert CASE_DIRS, f"no conformance cases discovered under {DEFAULT_CASES_DIR}"
 
 
-def test_the_ten_seed_cases_exist() -> None:
+def test_the_seed_cases_exist() -> None:
     assert {case_id(d) for d in CASE_DIRS} == {
         "envelope/001_minimal_accept",
         "envelope/002_stale_head",
@@ -44,6 +44,15 @@ def test_the_ten_seed_cases_exist() -> None:
         "fold/001_determinism",
         "fold/002_resume_equivalence",
         "diff/001_canonical_shape",
+        "base/001_edits_fold",
+        "base/002_uncited_base",
+        "base/003_superseded_base",
+        "base/004_scope_violation",
+        "base/005_author_roles",
+        "base/006_resume_equivalence",
+        "base/007_diff",
+        "base/008_base_selection",
+        "base/009_base_selection_group_outside_list",
     }
 
 

@@ -20,9 +20,12 @@ from .fold import (
     ApplyError,
     Model,
     apply_command,
+    entity_key,
     fold,
     integrity_violations,
+    is_entity_key,
     resolve_members,
+    split_entity_key,
     split_ref,
     static_errors,
 )
@@ -48,6 +51,7 @@ def _err(
     path: str,
     message: str,
     objects: list[str] | None = None,
+    entities: list[dict[str, str]] | None = None,
 ) -> dict[str, Any]:
     error: dict[str, Any] = {
         "code": code,
@@ -57,6 +61,8 @@ def _err(
     }
     if objects:
         error["objects"] = sorted(set(objects))
+    if entities:
+        error["entities"] = entities
     return error
 
 
@@ -120,7 +126,7 @@ def _iter_payload_refs(kind: str, payload: dict[str, Any]):
     """Yield (path, ulid) for every ULID reference the payload makes to an
     existing (or earlier-minted) object. The target Ref of set_attrs/remove is
     handled separately (selection expansion)."""
-    if kind == "selection.define":
+    if kind == "selection.define" and payload["criteria"]["kind"] == "explicit":
         for i, member in enumerate(payload["criteria"].get("objects", [])):
             yield f"/criteria/objects/{i}", member
         for gi, group in enumerate(payload["criteria"].get("groups", [])):
@@ -140,6 +146,16 @@ def _iter_payload_refs(kind: str, payload: dict[str, Any]):
         for name, value in payload.get("attrs", {}).items():
             if value.get("kind") == "reference":
                 yield f"/attrs/{name}/value", value["value"]
+
+
+def _iter_base_hashes(kind: str, payload: dict[str, Any]):
+    """Yield (path, content hash) for every cited base a payload relies on."""
+    if kind == "selection.define" and payload["criteria"]["kind"] == "base":
+        yield "/criteria/content_hash", payload["criteria"]["content_hash"]
+    if kind == "base.clone":
+        yield "/source/content_hash", payload["source"]["content_hash"]
+    if kind.startswith("base.") and payload.get("target", {}).get("kind") == "entity":
+        yield "/target/content_hash", payload["target"]["content_hash"]
 
 
 # ---------------------------------------------------------------------------
@@ -216,10 +232,12 @@ class _ScopeIndex:
         post: Model,
         errors: list[dict[str, Any]],
         minted: set[str],
+        cited_in_submission: set[str],
     ) -> None:
         self.whole_project = False
         self.covered: set[str] = set()
         self.regions: list[dict[str, Any]] = []
+        self.bases: set[str] = set()
         self.pre, self.post = pre, post
         for i, term in enumerate(terms):
             kind = term["kind"]
@@ -268,9 +286,34 @@ class _ScopeIndex:
                 self.covered.update(_network_members(post, net))
             elif kind == "region":
                 self.regions.append(term["region"])
+            elif kind in ("base", "base_entity"):
+                content_hash = term["content_hash"]
+                if pre.base_name(content_hash) is None and content_hash not in cited_in_submission:
+                    errors.append(
+                        _err(
+                            "unknown_reference",
+                            None,
+                            f"/scope/{i}/content_hash",
+                            f"scope base {content_hash} is not cited",
+                        )
+                    )
+                elif kind == "base":
+                    self.bases.add(content_hash)
+                else:
+                    self.covered.add(entity_key(content_hash, term["entity"]))
+
+    def _covers_base_of(self, key: str) -> bool:
+        if is_entity_key(key):
+            return split_entity_key(key)[0] in self.bases
+        return any(
+            state is not None
+            and "clone_of" in state.facts
+            and state.facts["clone_of"].value["content_hash"] in self.bases
+            for state in (self.pre.objects.get(key), self.post.objects.get(key))
+        )
 
     def contains(self, ulid: str) -> bool:
-        if self.whole_project or ulid in self.covered:
+        if self.whole_project or ulid in self.covered or self._covers_base_of(ulid):
             return True
         return any(
             _region_covers(
@@ -357,8 +400,26 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
         (rule["name"], str(rule["seq"])) for rule in model.rules
     }
 
+    #: base citations as they stand partway through the submission
+    base_of_hash = {c["content_hash"]: c["name"] for c in model.base_citations}
+    current_of_name = {c["name"]: c["content_hash"] for c in model.base_citations}
+    cited_in_submission: set[str] = set()
+    minted_clones: set[str] = set()
+
     def exists(candidate: str) -> bool:
         return candidate in model.objects or candidate in minted
+
+    def is_clone(candidate: str) -> bool:
+        obj = model.objects.get(candidate)
+        return candidate in minted_clones or (obj is not None and "clone_of" in obj.facts)
+
+    def base_selection(ulid: str) -> dict[str, Any] | None:
+        criteria = minted_selections.get(ulid)
+        if criteria is None:
+            obj = model.objects.get(ulid)
+            if obj is not None and obj.is_selection:
+                criteria = obj.facts["criteria"].value
+        return criteria if criteria is not None and criteria["kind"] == "base" else None
 
     for i, command in enumerate(commands):
         if i in bad:
@@ -374,6 +435,68 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
                         f"no such object {target!r}",
                     )
                 )
+        if kind == "base.cite":
+            base_of_hash.setdefault(payload["content_hash"], payload["name"])
+            current_of_name[payload["name"]] = payload["content_hash"]
+            cited_in_submission.add(payload["content_hash"])
+        for path, content_hash in _iter_base_hashes(kind, payload):
+            name = base_of_hash.get(content_hash)
+            if name is None or current_of_name[name] != content_hash:
+                errors.append(
+                    _err(
+                        "unknown_reference",
+                        i,
+                        f"/payload{path}",
+                        f"{content_hash} is not a current base citation",
+                    )
+                )
+        if kind == "selection.define" and payload["criteria"]["kind"] == "base":
+            selected = set(payload["criteria"]["entities"])
+            for gi, group in enumerate(payload["criteria"].get("groups", [])):
+                for ei, entity in enumerate(group["entities"]):
+                    if entity not in selected:
+                        errors.append(
+                            _err(
+                                "unknown_reference",
+                                i,
+                                f"/payload/criteria/groups/{gi}/entities/{ei}",
+                                f"{entity!r} is not in the selection's entity list",
+                            )
+                        )
+        if kind.startswith("base.") and "target" in payload:
+            base_target = payload["target"]
+            if base_target["kind"] == "clone" and not is_clone(base_target["object"]):
+                errors.append(
+                    _err(
+                        "unknown_reference",
+                        i,
+                        "/payload/target/object",
+                        f"no clone {base_target['object']!r}",
+                    )
+                )
+            elif base_target["kind"] == "selection":
+                selection_ulid, group = split_ref(base_target["selection"])
+                criteria = base_selection(selection_ulid)
+                if criteria is None:
+                    errors.append(
+                        _err(
+                            "unknown_reference",
+                            i,
+                            "/payload/target/selection",
+                            f"{base_target['selection']!r} does not name a base selection",
+                        )
+                    )
+                elif group is not None and group not in {
+                    g["name"] for g in criteria.get("groups", [])
+                }:
+                    errors.append(
+                        _err(
+                            "unknown_reference",
+                            i,
+                            "/payload/target/selection",
+                            f"selection {selection_ulid!r} has no group {group!r}",
+                        )
+                    )
         if kind in ("object.set_attrs", "object.remove"):
             target_ulid, group = split_ref(payload["target"])
             if target_ulid in minted_selections:
@@ -422,7 +545,7 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
                                 f"selection {target_ulid!r} has no group {group!r}",
                             )
                         )
-        if kind in ("object.create", "selection.define"):
+        if kind in ("object.create", "selection.define", "base.clone"):
             new_ulid = payload["object"]
             collides = (
                 new_ulid in minted
@@ -447,6 +570,8 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
                 minted.add(new_ulid)
                 if kind == "selection.define":
                     minted_selections[new_ulid] = payload["criteria"]
+                elif kind == "base.clone":
+                    minted_clones.add(new_ulid)
         if kind == "rule.define":
             project_rules.add((payload["name"], str(model.head + 1 + i)))
         if kind in ("registry.import", "presentation.import"):
@@ -603,7 +728,9 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
 
     # 8. Scope audit (#27). Declaration commands require the explicit
     # whole-project term; touched objects must match a declared term.
-    scope_index = _ScopeIndex(document["scope"], model, trial, errors, minted)
+    scope_index = _ScopeIndex(
+        document["scope"], model, trial, errors, minted, cited_in_submission
+    )
     has_project_term = scope_index.whole_project
     for i, command in enumerate(commands):
         if command["kind"] in spec.DECLARATION_KINDS and not has_project_term:
@@ -624,6 +751,7 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
         if not scope_index.contains(obj_ulid):
             fields = sorted(p for p in all_touched[obj_ulid] if not p.startswith("@"))
             markers = sorted(p for p in all_touched[obj_ulid] if p.startswith("@"))
+            names_entity = is_entity_key(obj_ulid)
             errors.append(
                 _err(
                     "scope_violation",
@@ -631,7 +759,10 @@ def submit(log: list[dict[str, Any]], document: Any) -> Accepted | Refused:
                     "/scope",
                     f"object {obj_ulid!r} ({', '.join(markers + fields) or 'touched'}) "
                     "matches no declared scope term",
-                    [obj_ulid],
+                    None if names_entity else [obj_ulid],
+                    [dict(zip(("content_hash", "entity"), split_entity_key(obj_ulid)))]
+                    if names_entity
+                    else None,
                 )
             )
 

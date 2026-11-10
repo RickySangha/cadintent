@@ -15,7 +15,11 @@ out of key sorting):
 - ``modified`` — per object ULID, changed field paths (facts plus a
   selection's ``derivation``) in fixed order, each
   ``{"before": {seq, value} | null, "after": {seq, value} | null,
-  "change": "value" | "provenance-only"}``.
+  "change": "value" | "provenance-only"}``;
+- ``base`` — present only when a base citation or a base entity's edits
+  changed: ``citations`` (one change record, or null) plus ``created`` /
+  ``modified`` / ``removed`` keyed '<content hash>#<entity>'. A base entity is
+  "created" when it is first edited and "removed" when fully reverted.
 
 Every field change carries a tag: ``value`` when the value differs,
 ``provenance-only`` when a fact was rewritten to the same value (only its
@@ -71,6 +75,52 @@ def _object_paths(entry: dict[str, Any]) -> dict[str, Any]:
     return paths
 
 
+def _diff_entries(
+    entries_a: dict[str, Any], entries_b: dict[str, Any]
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """(created, modified, removed) between two keyed sets of entries."""
+    created: dict[str, Any] = {}
+    removed: dict[str, Any] = {}
+    modified: dict[str, Any] = {}
+    for key in sorted(set(entries_a) | set(entries_b)):
+        if key not in entries_a:
+            created[key] = entries_b[key]
+        elif key not in entries_b:
+            removed[key] = entries_a[key]
+        elif entries_a[key] != entries_b[key]:
+            paths_a = _object_paths(entries_a[key])
+            paths_b = _object_paths(entries_b[key])
+            modified[key] = {
+                path: _change(paths_a.get(path), paths_b.get(path))
+                for path in sorted(set(paths_a) | set(paths_b))
+                if paths_a.get(path) != paths_b.get(path)
+            }
+    return created, modified, removed
+
+
+def _flat_entities(doc: dict[str, Any]) -> dict[str, Any]:
+    """A snapshot's base entities keyed '<content hash>#<entity>'."""
+    return {
+        f"{content_hash}#{entity}": entry
+        for content_hash, entities in doc.get("base", {}).get("entities", {}).items()
+        for entity, entry in entities.items()
+    }
+
+
+def _base_diff(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any] | None:
+    citations_a = a.get("base", {}).get("citations", [])
+    citations_b = b.get("base", {}).get("citations", [])
+    created, modified, removed = _diff_entries(_flat_entities(a), _flat_entities(b))
+    if citations_a == citations_b and not (created or modified or removed):
+        return None
+    return {
+        "citations": _change(citations_a, citations_b) if citations_a != citations_b else None,
+        "created": created,
+        "modified": modified,
+        "removed": removed,
+    }
+
+
 def diff_doc(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
     """The canonical diff document between two parsed snapshot documents."""
     meta = {
@@ -84,25 +134,8 @@ def diff_doc(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
         if a["declarations"][key] != b["declarations"][key]
     }
 
-    created: dict[str, Any] = {}
-    removed: dict[str, Any] = {}
-    modified: dict[str, Any] = {}
-    objects_a, objects_b = a["objects"], b["objects"]
-    for ulid in sorted(set(objects_a) | set(objects_b)):
-        if ulid not in objects_a:
-            created[ulid] = objects_b[ulid]
-        elif ulid not in objects_b:
-            removed[ulid] = objects_a[ulid]
-        elif objects_a[ulid] != objects_b[ulid]:
-            paths_a = _object_paths(objects_a[ulid])
-            paths_b = _object_paths(objects_b[ulid])
-            modified[ulid] = {
-                path: _change(paths_a.get(path), paths_b.get(path))
-                for path in sorted(set(paths_a) | set(paths_b))
-                if paths_a.get(path) != paths_b.get(path)
-            }
-
-    return {
+    created, modified, removed = _diff_entries(a["objects"], b["objects"])
+    doc: dict[str, Any] = {
         "spec": spec.SPEC_VERSION,
         "meta": meta,
         "declarations": declarations,
@@ -110,6 +143,10 @@ def diff_doc(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
         "modified": modified,
         "removed": removed,
     }
+    base = _base_diff(a, b)
+    if base is not None:
+        doc["base"] = base
+    return doc
 
 
 def diff_bytes(a: bytes, b: bytes) -> bytes:

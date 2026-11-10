@@ -4,6 +4,7 @@
 from __future__ import annotations
 from typing import Annotated, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field, RootModel
+from enum import StrEnum
 from . import common, geometry as geometry_1, registry as registry_1, topology
 
 
@@ -15,6 +16,22 @@ class CadintentCoreCommandPayloads(RootModel[Any]):
             title='cadintent core command payloads',
         ),
     ]
+
+
+class Entity(RootModel[str]):
+    root: Annotated[str, Field(min_length=1)]
+
+
+class Layer(RootModel[str]):
+    root: Annotated[str, Field(min_length=1)]
+
+
+class Block(RootModel[str]):
+    root: Annotated[str, Field(min_length=1)]
+
+
+class Type(RootModel[str]):
+    root: Annotated[str, Field(min_length=1)]
 
 
 class StringAttr(BaseModel):
@@ -39,6 +56,18 @@ class IntegerAttr(BaseModel):
     )
     kind: Literal['integer']
     value: int
+
+
+class BaseTags(RootModel[dict[str, str]]):
+    root: Annotated[dict[str, str], Field(min_length=1)]
+
+
+class FieldModel(StrEnum):
+    points = 'points'
+    text = 'text'
+    tags = 'tags'
+    transform = 'transform'
+    deleted = 'deleted'
 
 
 class ImportRef(BaseModel):
@@ -122,11 +151,69 @@ class ExplicitSelectionCriteria(BaseModel):
     groups: list[SelectionGroup] | None = None
 
 
-class SelectionCriteria(RootModel[ExplicitSelectionCriteria]):
-    root: Annotated[
-        ExplicitSelectionCriteria,
+class BaseSelectionGroup(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: common.GroupName
+    entities: list[Entity]
+
+
+class BaseSelectionClassBand(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: common.GroupName
+    max_offset: common.DecimalString | None = None
+
+
+class BaseSelectionClassify(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    offset_to: Annotated[
+        str,
         Field(
-            description='What a selection selects. v0 ships only the explicit kind; membership is resolved at replay and recorded in the derivation record.',
+            description='The native reference of the entity offsets are measured to.',
+            min_length=1,
+        ),
+    ]
+    bands: Annotated[list[BaseSelectionClassBand], Field(min_length=1)]
+
+
+class BaseSelectionWhere(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    layers: Annotated[list[Layer] | None, Field(min_length=1)] = None
+    blocks: Annotated[list[Block] | None, Field(min_length=1)] = None
+    types: Annotated[
+        list[Type] | None,
+        Field(description="Native entity type names, e.g. 'INSERT'.", min_length=1),
+    ] = None
+    region: geometry_1.Region | None = None
+    classify: BaseSelectionClassify | None = None
+
+
+class BaseSelectionCriteria(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['base']
+    content_hash: common.Sha256Hash
+    where: BaseSelectionWhere
+    entities: Annotated[
+        list[Entity],
+        Field(description='The native references the predicates matched in this base.'),
+    ]
+    groups: list[BaseSelectionGroup] | None = None
+
+
+class SelectionCriteria(RootModel[ExplicitSelectionCriteria | BaseSelectionCriteria]):
+    root: Annotated[
+        ExplicitSelectionCriteria | BaseSelectionCriteria,
+        Field(
+            description='What a selection selects. Explicit membership is resolved at replay and recorded in the derivation record. Base membership is resolved when the command is written and recorded in the command.',
             discriminator='kind',
         ),
     ]
@@ -164,6 +251,139 @@ class ObjectRemovePayload(BaseModel):
         extra='forbid',
     )
     target: common.Ref
+
+
+class BaseEntityTarget(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['entity']
+    content_hash: common.Sha256Hash
+    entity: Annotated[str, Field(min_length=1)]
+
+
+class BaseSelectionTarget(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['selection']
+    selection: common.Ref
+
+
+class BaseCloneTarget(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    kind: Literal['clone']
+    object: common.Ulid
+
+
+class BaseTarget(RootModel[BaseEntityTarget | BaseSelectionTarget | BaseCloneTarget]):
+    root: Annotated[
+        BaseEntityTarget | BaseSelectionTarget | BaseCloneTarget,
+        Field(description='What a base edit applies to.', discriminator='kind'),
+    ]
+
+
+class BaseVertices(RootModel[list[geometry_1.PolylineVertex]]):
+    root: Annotated[
+        list[geometry_1.PolylineVertex],
+        Field(
+            description="An entity's defining points in the base's own drawing coordinates, replacing the ones it holds. What the points mean depends on the native entity: a polyline's vertices, a line's two ends, a text's or block's insertion point. The coordinate quantum does not apply: a vertex that is not meant to change is written with the exact value the base holds, because rounding it would move geometry the author did not mean to touch.",
+            min_length=1,
+        ),
+    ]
+
+
+class BaseTransform(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    translate: geometry_1.Point
+    rotate: Annotated[
+        common.DecimalString | None, Field(description='Counter-clockwise degrees.')
+    ] = None
+    scale: common.PositiveDecimalString | None = None
+    origin: geometry_1.Point | None = None
+
+
+class BaseCitePayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    name: Annotated[
+        str,
+        Field(
+            description="The drawing this base is a version of, e.g. 'offsite'.",
+            min_length=1,
+        ),
+    ]
+    content_hash: common.Sha256Hash
+    format: Annotated[
+        str,
+        Field(description="The base file's native format, e.g. 'dxf'.", min_length=1),
+    ]
+
+
+class BaseSetPointsPayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    target: BaseTarget
+    vertices: BaseVertices
+
+
+class BaseSetTextPayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    target: BaseTarget
+    text: str
+
+
+class BaseSetTagsPayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    target: BaseTarget
+    tags: BaseTags
+
+
+class BaseTransformPayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    target: BaseTarget
+    transform: BaseTransform
+
+
+class BaseDeletePayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    target: BaseTarget
+
+
+class BaseRevertPayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    target: BaseTarget
+    fields: Annotated[list[FieldModel] | None, Field(min_length=1)] = None
+
+
+class BaseClonePayload(BaseModel):
+    model_config = ConfigDict(
+        extra='forbid',
+    )
+    object: Annotated[
+        common.Ulid, Field(description="The clone's ULID, minted by the author.")
+    ]
+    source: common.BaseEntityRef
+    vertices: BaseVertices | None = None
+    text: str | None = None
+    tags: BaseTags | None = None
+    transform: BaseTransform | None = None
 
 
 class ProjectUnitsPayload(BaseModel):

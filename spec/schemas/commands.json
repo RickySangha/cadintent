@@ -152,9 +152,104 @@
         }
       }
     },
+    "BaseSelectionGroup": {
+      "type": "object",
+      "description": "One named group within a base selection, referenced later as '<selection ULID>#<name>'. Its entities must all be in the selection's resolved list.",
+      "additionalProperties": false,
+      "required": ["name", "entities"],
+      "properties": {
+        "name": { "$ref": "common.json#/$defs/GroupName" },
+        "entities": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "BaseSelectionClassBand": {
+      "type": "object",
+      "description": "One band of a classification. Entities within max_offset of the reference entity fall in the band; a band with no max_offset takes the rest.",
+      "additionalProperties": false,
+      "required": ["name"],
+      "properties": {
+        "name": { "$ref": "common.json#/$defs/GroupName" },
+        "max_offset": { "$ref": "common.json#/$defs/DecimalString" }
+      }
+    },
+    "BaseSelectionClassify": {
+      "type": "object",
+      "description": "Sorts the selected entities into named groups by lateral offset to one entity of the same base.",
+      "additionalProperties": false,
+      "required": ["offset_to", "bands"],
+      "properties": {
+        "offset_to": {
+          "type": "string",
+          "description": "The native reference of the entity offsets are measured to.",
+          "minLength": 1
+        },
+        "bands": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BaseSelectionClassBand" },
+          "minItems": 1
+        }
+      }
+    },
+    "BaseSelectionWhere": {
+      "type": "object",
+      "description": "The predicates that produced a base selection: recorded provenance, which the kernel stores and never evaluates. At least one predicate is present.",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "layers": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "blocks": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "types": {
+          "type": "array",
+          "description": "Native entity type names, e.g. 'INSERT'.",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "region": { "$ref": "geometry.json#/$defs/Region" },
+        "classify": { "$ref": "#/$defs/BaseSelectionClassify" }
+      }
+    },
+    "BaseSelectionCriteria": {
+      "type": "object",
+      "description": "Selects entities of a cited base by predicate. The kernel has no reader for base files and replay must be byte-identical without one, so the author resolves the predicates against the cited base when the command is written and records the result here. Replay uses the recorded list. It is not re-evaluated.",
+      "additionalProperties": false,
+      "required": ["kind", "content_hash", "where", "entities"],
+      "properties": {
+        "kind": { "const": "base" },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" },
+        "where": { "$ref": "#/$defs/BaseSelectionWhere" },
+        "entities": {
+          "type": "array",
+          "description": "The native references the predicates matched in this base.",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "groups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BaseSelectionGroup" }
+        }
+      }
+    },
     "SelectionCriteria": {
-      "description": "What a selection selects. v0 ships only the explicit kind; membership is resolved at replay and recorded in the derivation record.",
-      "oneOf": [{ "$ref": "#/$defs/ExplicitSelectionCriteria" }],
+      "description": "What a selection selects. Explicit membership is resolved at replay and recorded in the derivation record. Base membership is resolved when the command is written and recorded in the command.",
+      "oneOf": [
+        { "$ref": "#/$defs/ExplicitSelectionCriteria" },
+        { "$ref": "#/$defs/BaseSelectionCriteria" }
+      ],
       "discriminator": { "propertyName": "kind" }
     },
     "SelectionDefinePayload": {
@@ -304,6 +399,217 @@
       "required": ["target"],
       "properties": {
         "target": { "$ref": "common.json#/$defs/Ref" }
+      }
+    },
+    "BaseEntityTarget": {
+      "type": "object",
+      "description": "One entity of a cited base, which must be the current citation of its drawing.",
+      "additionalProperties": false,
+      "required": ["kind", "content_hash", "entity"],
+      "properties": {
+        "kind": { "const": "entity" },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" },
+        "entity": { "type": "string", "minLength": 1 }
+      }
+    },
+    "BaseSelectionTarget": {
+      "type": "object",
+      "description": "Each entity of a base selection or one of its groups.",
+      "additionalProperties": false,
+      "required": ["kind", "selection"],
+      "properties": {
+        "kind": { "const": "selection" },
+        "selection": { "$ref": "common.json#/$defs/Ref" }
+      }
+    },
+    "BaseCloneTarget": {
+      "type": "object",
+      "description": "An object made by base.clone.",
+      "additionalProperties": false,
+      "required": ["kind", "object"],
+      "properties": {
+        "kind": { "const": "clone" },
+        "object": { "$ref": "common.json#/$defs/Ulid" }
+      }
+    },
+    "BaseTarget": {
+      "description": "What a base edit applies to.",
+      "oneOf": [
+        { "$ref": "#/$defs/BaseEntityTarget" },
+        { "$ref": "#/$defs/BaseSelectionTarget" },
+        { "$ref": "#/$defs/BaseCloneTarget" }
+      ],
+      "discriminator": { "propertyName": "kind" }
+    },
+    "BaseVertices": {
+      "type": "array",
+      "description": "An entity's defining points in the base's own drawing coordinates, replacing the ones it holds. What the points mean depends on the native entity: a polyline's vertices, a line's two ends, a text's or block's insertion point. The coordinate quantum does not apply: a vertex that is not meant to change is written with the exact value the base holds, because rounding it would move geometry the author did not mean to touch.",
+      "items": { "$ref": "geometry.json#/$defs/PolylineVertex" },
+      "minItems": 1
+    },
+    "BaseTags": {
+      "type": "object",
+      "description": "Block attribute tag name -> text. Tag names are native to the base.",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string" }
+    },
+    "BaseTransform": {
+      "type": "object",
+      "description": "Where an entity is drawn relative to its points: its 'points' fact if it has one, otherwise what the base holds. The transform is absolute, not cumulative: a later transform replaces it, so the fold does no arithmetic. Applied as scale, then rotate about 'origin', then translate. Origin defaults to (0, 0).",
+      "additionalProperties": false,
+      "required": ["translate"],
+      "properties": {
+        "translate": { "$ref": "geometry.json#/$defs/Point" },
+        "rotate": {
+          "$ref": "common.json#/$defs/DecimalString",
+          "description": "Counter-clockwise degrees."
+        },
+        "scale": { "$ref": "common.json#/$defs/PositiveDecimalString" },
+        "origin": { "$ref": "geometry.json#/$defs/Point" }
+      }
+    },
+    "BaseCitePayload": {
+      "type": "object",
+      "description": "Cites a base: an immutable file the design is drawn over, by content hash, under a drawing name. Re-citing a name with a new hash supersedes the earlier base; edits then target the new one. A hash belongs to one name, and the current hash of a name cannot be cited again. Declaration commands need the explicit whole-project scope term. An agent cannot choose its own base.",
+      "x-cadintent-command": {
+        "kind": "base.cite",
+        "authorRoles": ["engineer", "extractor"],
+        "basis": "optional",
+        "declarationClass": "additive-import"
+      },
+      "additionalProperties": false,
+      "required": ["name", "content_hash", "format"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The drawing this base is a version of, e.g. 'offsite'.",
+          "minLength": 1
+        },
+        "content_hash": { "$ref": "common.json#/$defs/Sha256Hash" },
+        "format": {
+          "type": "string",
+          "description": "The base file's native format, e.g. 'dxf'.",
+          "minLength": 1
+        }
+      }
+    },
+    "BaseSetPointsPayload": {
+      "type": "object",
+      "description": "Replaces an entity's defining points. The base file never changes; this changes what is compiled over it.",
+      "x-cadintent-command": {
+        "kind": "base.set_points",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["target", "vertices"],
+      "properties": {
+        "target": { "$ref": "#/$defs/BaseTarget" },
+        "vertices": { "$ref": "#/$defs/BaseVertices" }
+      }
+    },
+    "BaseSetTextPayload": {
+      "type": "object",
+      "description": "Replaces an entity's text content.",
+      "x-cadintent-command": {
+        "kind": "base.set_text",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["target", "text"],
+      "properties": {
+        "target": { "$ref": "#/$defs/BaseTarget" },
+        "text": { "type": "string" }
+      }
+    },
+    "BaseSetTagsPayload": {
+      "type": "object",
+      "description": "Sets block attribute tags. Only the tags named are written.",
+      "x-cadintent-command": {
+        "kind": "base.set_tags",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["target", "tags"],
+      "properties": {
+        "target": { "$ref": "#/$defs/BaseTarget" },
+        "tags": { "$ref": "#/$defs/BaseTags" }
+      }
+    },
+    "BaseTransformPayload": {
+      "type": "object",
+      "description": "Sets where an entity is drawn. See BaseTransform.",
+      "x-cadintent-command": {
+        "kind": "base.transform",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["target", "transform"],
+      "properties": {
+        "target": { "$ref": "#/$defs/BaseTarget" },
+        "transform": { "$ref": "#/$defs/BaseTransform" }
+      }
+    },
+    "BaseDeletePayload": {
+      "type": "object",
+      "description": "Leaves an entity out of what is compiled. Edits to a deleted entity refuse until it is reverted. Deleting a clone removes the clone.",
+      "x-cadintent-command": {
+        "kind": "base.delete",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["target"],
+      "properties": {
+        "target": { "$ref": "#/$defs/BaseTarget" }
+      }
+    },
+    "BaseRevertPayload": {
+      "type": "object",
+      "description": "Withdraws edits so an entity goes back to what the base holds, for the named fields or all of them. Lets a generator that stops making an edit say so. Refuses when there is nothing to revert. Not for clones, which have no base state: remove them.",
+      "x-cadintent-command": {
+        "kind": "base.revert",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["target"],
+      "properties": {
+        "target": { "$ref": "#/$defs/BaseTarget" },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["points", "text", "tags", "transform", "deleted"]
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      }
+    },
+    "BaseClonePayload": {
+      "type": "object",
+      "description": "Makes a new object from a base entity: same type and styling as the source, with its own ULID. The fields present override what the source holds. The source may be deleted.",
+      "x-cadintent-command": {
+        "kind": "base.clone",
+        "authorRoles": ["engineer", "agent", "compiler"],
+        "basis": "required"
+      },
+      "additionalProperties": false,
+      "required": ["object", "source"],
+      "properties": {
+        "object": {
+          "$ref": "common.json#/$defs/Ulid",
+          "description": "The clone's ULID, minted by the author."
+        },
+        "source": { "$ref": "common.json#/$defs/BaseEntityRef" },
+        "vertices": { "$ref": "#/$defs/BaseVertices" },
+        "text": { "type": "string" },
+        "tags": { "$ref": "#/$defs/BaseTags" },
+        "transform": { "$ref": "#/$defs/BaseTransform" }
       }
     }
   }
